@@ -413,8 +413,11 @@ class MainWindow(QMainWindow):
                     shapes_fixed_order.append(shape_nr)
 
                 shapes_to_write.append(shape_nr)
-                shapes_st_en_points.append(self.shapes[layerContent.exp_order[shape_nr]].get_start_end_points())
-
+                if self.shapes[LayerContent.exp_order[shape_nr]].Pocket == True: 
+                    shapes_st_en_points.append(self.shapes[LayerContent.exp_order[shape_nr]].get_start_end_points(PPocket=True))
+                else:
+                    shapes_st_en_points.append(self.shapes[LayerContent.exp_order[shape_nr]].get_start_end_points())
+                    
             # Perform Export only if the Number of shapes to export is bigger than 0
             if len(shapes_to_write) > 0:
                 # Errechnen der Iterationen
@@ -726,6 +729,7 @@ class MainWindow(QMainWindow):
             self.ui.unitLabel_7.setText(distance)
             self.ui.unitLabel_8.setText(speed)
             self.ui.unitLabel_9.setText(speed)
+            self.ui.unitLabel_15.setText(distance)
 
         if g.config.metric != metric:
             for layerContent in self.layerContents:
