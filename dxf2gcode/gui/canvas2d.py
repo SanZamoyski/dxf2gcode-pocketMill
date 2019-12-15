@@ -348,10 +348,8 @@ class MyGraphicsScene(QGraphicsScene):
         """
 
         length = 20
-        if shape.Pocket == False:
-            start, start_ang = shape.get_start_end_points_physical(True, True)
-        else:
-            start, start_ang = shape.get_start_end_points_physical(True, True, PPocket=True)
+        start, start_ang = shape.get_start_end_points_physical(True, True, PPocket=True)
+        
         arrow = Arrow(startp=start,
                       length=length,
                       angle=start_ang,
@@ -366,10 +364,7 @@ class MyGraphicsScene(QGraphicsScene):
         @param shape: The shape for which the Arrow shall be created.
         """
         length = 20
-        if shape.Pocket == False:
-            end, end_ang = shape.get_start_end_points_physical(False, True)
-        else:
-            end, end_ang = shape.get_start_end_points_physical(False, True, PPocket=True)
+        end, end_ang = shape.get_start_end_points_physical(False, True, PPocket=shape.Pocket)
             
         arrow = Arrow(startp=end,
                       length=length,

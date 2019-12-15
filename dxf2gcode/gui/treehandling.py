@@ -1330,14 +1330,8 @@ class TreeHandler(QWidget):
                                                            self.f_g1_depth,
                                                            shape_item.f_g1_depth)
 
-            if(shape_item.Pocket == True):
-                self.ui.OffsetXYLineEdit.setEnabled(True)
-                self.OffsetXY = self.updateAndColorizeWidget(self.ui.OffsetXYLineEdit,
-                                                           self.OffsetXY,
-                                                           shape_item.OffsetXY)
-            else:
-                self.ui.OffsetXYLineEdit.setEnabled(False)
-                self.OffsetXY = self.updateAndColorizeWidget(self.ui.OffsetXYLineEdit,
+            self.ui.OffsetXYLineEdit.setEnabled(shape_item.Pocket)
+            self.OffsetXY = self.updateAndColorizeWidget(self.ui.OffsetXYLineEdit,
                                                            self.OffsetXY,
                                                            shape_item.OffsetXY)
                 
