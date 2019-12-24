@@ -60,12 +60,14 @@ class InterPoint(object):
     
     def setMill(self, mill=False):
         self.mill = mill
-            ### end of not-inside
+        ### end of not-inside
         
 class BBArray(object):
     def __init__(self, bbStartPoint, bbEndPoint, diff):
         self.array = []
         self.any = False
+        
+        #Start point - top, right
         
         if bbStartPoint.x > bbEndPoint.x:
             self.xStart = bbEndPoint.x
@@ -102,17 +104,15 @@ class BBArray(object):
             if point.mill == True:
                 any = True
                 break
-            
+
         return any
         
     def append(self, newPoint):
         self.array.append(newPoint)
-        
+
     def findTopRight(self):
-        
         #this will be always outside BBox of Shape
         topRight = InterPoint(self.xStart - 1, self.yEnd - 1, 0, False)
-        
         #max y
         for point in self.array:
             if point.y > topRight.y:
@@ -121,28 +121,118 @@ class BBArray(object):
         for point in self.array:
             if point.y == topRight.y and point.x > topRight.x:
                 topRight = point
-                
+        
         return topRight
+
+    def findDownLeft(self):
+        #this will be always outside BBox of Shape
+        downLeft = InterPoint(self.xEnd + 1, self.yStart + 1, 0, False)
+        
+        #min y
+        for point in self.array:
+            if point.mill == True and point.y < downLeft.y:
+                downLeft = point
+                
+        for point in self.array:
+            if point.mill == True and point.y == downLeft.y and point.x < downLeft.x:
+                downLeft = point
+                
+        return downLeft
     
     def print(self):
-            
-            yi = self.array[0].y
-            for BBPoint in self.array:
+        yi = self.array[0].y
+        for BBPoint in self.array:
                 
-                if BBPoint.y != yi:
-                    yi = BBPoint.y 
-                    print()
+            if BBPoint.y != yi:
+                yi = BBPoint.y 
+                print()
                 
-                if BBPoint.mill:
-                    print('T', end = ' ')
-                else:
-                    print(' ', end = ' ')
+            if BBPoint.mill:
+                print('T', end = ' ')
+            else:
+                print(' ', end = ' ')
                     
-            print()
+        print()
+        
+    def removeLine(self, line):
+        for BBPoint in self.array:
+            if BBPoint.y == line.Ps.y and line.Pe.x >= BBPoint.x and BBPoint.x >= line.Ps.x:
+                BBPoint.setMill(False)
+                
+    def findHorizontalWithPoint(self, point, ltr = 1):
+        #values outside the box
+        closestFalseLeft = self.xStart - 1
+        closestFalseRight = self.xEnd + 1
+        
+        closestTrueLeft = point.x
+        closestTrueRight = point.x
+        
+        #go left and right and find closest Falses
+        for aPoint in self.array:
+            if aPoint.mill == False and aPoint.y == point.y:
+                if aPoint.x < point.x and closestFalseLeft < aPoint.x:
+                    closestFalseLeft = aPoint.x
+                    
+                if aPoint.x > point.x and closestFalseRight > aPoint.x:
+                    closestFalseRight = aPoint.x
+        
+        print("False x'ses: %s and %s" % (closestFalseLeft, closestFalseRight))
+        
+        #now find closest True's to those points
+        for aPoint in self.array:
+            if aPoint.mill == True and aPoint.y == point.y:
+                #looking for most-left (smallest x) True
+                #before (bigger than) closestFalseLeft
+                #smaller than point
+                if aPoint.x < point.x and aPoint.x > closestFalseLeft and aPoint.x < closestTrueLeft:
+                    closestTrueLeft = aPoint.x
+                    
+                if aPoint.x > point.x and aPoint.x < closestFalseRight and aPoint.x > closestTrueRight:
+                    closestTrueRight = aPoint.x
+        
+        print("True x'ses: %s and %s" % (closestTrueLeft, closestTrueRight))
+        
+        if ltr == 1:
+            return LineGeo(Point(closestTrueLeft, point.y), Point(closestTrueRight, point.y))
+        else:
+            return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
+        
+    
+    def findClosestTopLeft(self, point):
+        #always outside BBox
+        newy = self.yStart + 1 
+        newx = point.x
+        
+        #find closest y (not necessery True)
+        fy = False
+        for BBPoint in self.array:
+            if BBPoint.y > point.y and BBPoint.y < newy:
+                newy = BBPoint.y
+                fy = True
+        
+        if fy == False:
+            #should never happen
+            print("YYY")
+            return None
+        
+        #find in array closest x to left, but with y = newy
+        # this time it has to be true
+        fx = False
+        for BBPoint in self.array:
+            if BBPoint.mill == True and BBPoint.y == newy and BBPoint.x <= point.x:
+                if newx <= BBPoint.x:
+                    newx = BBPoint.x
+                    fx = True
+        
+        #if not found?
+        if fx == False:
+            print("XXX")
+            return None
+                
+        return Point(newx, newy)
             
 class PocketMill(object):
     def __init__(self, stmove=None):
-
         self.stmove = stmove
         
         # Get tool radius based on tool diameter.
@@ -162,11 +252,9 @@ class PocketMill(object):
         self.inters = []
                 
     def removeNearShape(self):
-            
         for BBPoint in self.bbarray.array:
             #check only points that are meant to be milled
             if BBPoint.mill == True:
-                
                 #check if this point is not too close to any geo in shape
                 for geo in self.stmove.shape.geos.abs_iter():
                     if isinstance(geo, LineGeo):
@@ -192,7 +280,6 @@ class PocketMill(object):
             
     def createInterList(self):
         yi = self.bbarray.yStart - self.diff
-        
         #this while loop will prepare points that crosses the shape.
         # it will be used later to check if point lays inside shape.
         # imagine horizontal line from particular point up to the end
@@ -286,11 +373,9 @@ class PocketMill(object):
                                 self.inters.append(p2)
                                 
             yi -= self.diff
-                
             #print("End of finding intersections")
         
     def createLines(self):
-        
         if False:
             print("beans shape")
             #TODO:
@@ -548,6 +633,7 @@ class PocketMill(object):
             
         elif True:
             #distances between  map of points to check
+            #TODO: different distances in X (smaller) and Y
             self.diff = self.tool_rad*0.9
             
             #print('BB: ' + self.stmove.shape.BB)
@@ -614,7 +700,7 @@ class PocketMill(object):
             #        #BBArrayIndex += 1  
             #        
             #    break
-
+            
             #for gg in self.stmove.shape.geos.abs_iter():
             #    if isinstance(gg, LineGeo):
             #        print('Line: ')
@@ -625,7 +711,51 @@ class PocketMill(object):
             #    #if (isinstance(self.stmove.selectedItems[0].geos[0], ArcGeo)
             #    print(gg)
             
-            print(self.bbarray.findTopRight())
+            #if there are none milling points end function
+            #if self.bbarray.checkIfAny() == False:
+            #    return
             
+            #start from left-bottom
+            currentPoint = self.bbarray.findDownLeft()
+            
+            line = self.bbarray.findHorizontalWithPoint(currentPoint, 1)
+            print("Left to right line: %s." % (line))
+            
+            #go to right
+            self.stmove.append(line)
+            self.bbarray.removeLine(line)
+            
+            currentPoint = line.Pe
+            goToPoint = self.bbarray.findClosestTopLeft(currentPoint)
+            
+            print("Go from %s to %s." % (currentPoint, goToPoint))
+            
+            if goToPoint == None:
+                print("NONE?!")
+                #break
+                
+            #if not sraight over "end-point", go back under this point 
+            if currentPoint.x != goToPoint.x:
+                self.stmove.append(LineGeo(currentPoint, Point(goToPoint.x, currentPoint.y)))
+                currentPoint = Point(goToPoint.x, currentPoint.y)
+            
+            #go to start point of next line
+            self.stmove.append(LineGeo(currentPoint, Point(currentPoint.x, goToPoint.y)))
+            currentPoint = Point(currentPoint.x, goToPoint.y)
+            self.stmove.append(LineGeo(currentPoint, goToPoint))
+            
+            line = self.bbarray.findHorizontalWithPoint(currentPoint, 0)
+            print("Right to left line: %s. " % (line))
+            self.stmove.append(line)
+            self.bbarray.removeLine(line)
+            
+            
+            #TODO: ltr and rtl on findHorizontalWithPoint
+            
+            
+            
+            
+            print("Removed line.")
+            self.bbarray.print()
             #ipoint = InterPoint(x=0, y=0, i=0, mill = False)
             #print("%s" % (ipoint))
