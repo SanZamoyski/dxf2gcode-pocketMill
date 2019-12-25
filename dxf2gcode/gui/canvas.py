@@ -138,19 +138,22 @@ class MyDropDownMenu(QMenu):
 
         self.addSeparator()
         
-        if len(self.selectedItems) == 1 and self.selectedItems[0].closed == True and ((len(self.selectedItems[0].geos) == 2 or len(self.selectedItems[0].geos) == 4) or self.selectedItems[0].Pocket == True) : 
-            if (isinstance(self.selectedItems[0].geos[0], ArcGeo) and (len(self.selectedItems[0].geos) == 2) or self.selectedItems[0].Pocket == True) or\
-                (isinstance(self.selectedItems[0].geos[0], LineGeo) and (len(self.selectedItems[0].geos) == 4) or self.selectedItems[0].Pocket == True)  :#and geo.length > 0.5 * 0.1 ** post_dec * pi:
-                self.PocketAction = self.addAction(self.tr("Pocket Mill"))
-                self.PocketAction.setCheckable(True)
-                if g.config.machine_type == 'drag_knife':
-                    pass
-                else:
-                    self.PocketAction.triggered.connect(self.setPocket)
-                if self.selectedItems[0].Pocket == True:
-                    self.PocketAction.setChecked(True)
-                else:
-                    self.PocketAction.setChecked(False)
+        #enable pocket mill for all shapes
+        #TODO: reenable it only for closed shapes
+        
+        #if len(self.selectedItems) == 1 and self.selectedItems[0].closed == True and ((len(self.selectedItems[0].geos) == 2 or len(self.selectedItems[0].geos) == 4) or #self.selectedItems[0].Pocket == True) : 
+            #if (isinstance(self.selectedItems[0].geos[0], ArcGeo) and (len(self.selectedItems[0].geos) == 2) or self.selectedItems[0].Pocket == True) or\
+            #    (isinstance(self.selectedItems[0].geos[0], LineGeo) and (len(self.selectedItems[0].geos) == 4) or self.selectedItems[0].Pocket == True)  :#and geo.length > 0.5 * #0.1 ** post_dec * pi:
+        self.PocketAction = self.addAction(self.tr("Pocket Mill"))
+        self.PocketAction.setCheckable(True)
+        if g.config.machine_type == 'drag_knife':
+            pass
+        else:
+            self.PocketAction.triggered.connect(self.setPocket)
+        if self.selectedItems[0].Pocket == True:
+            self.PocketAction.setChecked(True)
+        else:
+            self.PocketAction.setChecked(False)
                     
 
         if g.config.machine_type == 'drag_knife':
