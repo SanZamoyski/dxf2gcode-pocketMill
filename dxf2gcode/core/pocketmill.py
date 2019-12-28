@@ -6,6 +6,9 @@
 #    Christian Kohlöffel
 #    Vinzenz Schulz
 #    Jean-Paul Schouwstra
+#   
+#   Copyright (C) 2019-2020 
+#    San Zamoyski for this file
 #
 #   This file is part of DXF2GCODE.
 #
@@ -31,8 +34,8 @@ from math import sin, cos, pi, sqrt
 from copy import deepcopy
 
 #for dumps
-from inspect import getmembers
-from pprint import pprint
+#from inspect import getmembers
+#from pprint import pprint
 
 import dxf2gcode.globals.globals as g
 
@@ -46,6 +49,8 @@ from dxf2gcode.core.shapeoffset import *
 
 import logging
 logger = logging.getLogger('core.pocketmill')
+
+import time
 
 class InterPoint(object):
     def __init__(self, x=0, y=0, i=0, mill = False):
@@ -140,12 +145,16 @@ class BBArray(object):
         return downLeft
     
     def print(self):
+        #This will stop work if array will be not in order
         yi = self.array[0].y
+        print("%8.2f" % (yi) , end = "\t")
+        
         for BBPoint in self.array:
                 
             if BBPoint.y != yi:
                 yi = BBPoint.y 
                 print()
+                print("%8.2f" % (yi) , end = "\t")
                 
             if BBPoint.mill:
                 print('T', end = ' ')
@@ -155,6 +164,9 @@ class BBArray(object):
         print()
         
     def removeLine(self, line):
+        if line.Ps.x > line.Pe.x:
+            line = LineGeo(line.Pe, line.Ps)
+        
         for BBPoint in self.array:
             if BBPoint.y == line.Ps.y and line.Pe.x >= BBPoint.x and BBPoint.x >= line.Ps.x:
                 BBPoint.setMill(False)
@@ -176,7 +188,7 @@ class BBArray(object):
                 if aPoint.x > point.x and closestFalseRight > aPoint.x:
                     closestFalseRight = aPoint.x
         
-        print("False x'ses: %s and %s" % (closestFalseLeft, closestFalseRight))
+        #print("False x'ses: %s and %s" % (closestFalseLeft, closestFalseRight))
         
         #now find closest True's to those points
         for aPoint in self.array:
@@ -190,9 +202,9 @@ class BBArray(object):
                 if aPoint.x > point.x and aPoint.x < closestFalseRight and aPoint.x > closestTrueRight:
                     closestTrueRight = aPoint.x
         
-        print("True x'ses: %s and %s" % (closestTrueLeft, closestTrueRight))
+        #print("True x'ses: %s and %s" % (closestTrueLeft, closestTrueRight))
         
-        if ltr == 1:
+        if ltr == True:
             return LineGeo(Point(closestTrueLeft, point.y), Point(closestTrueRight, point.y))
         else:
             return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
@@ -201,7 +213,7 @@ class BBArray(object):
     def findClosestTopLeft(self, point):
         #always outside BBox
         newy = self.yStart + 1 
-        newx = point.x
+        newx = self.xStart - 1
         
         #find closest y (not necessery True)
         fy = False
@@ -212,7 +224,7 @@ class BBArray(object):
         
         if fy == False:
             #should never happen
-            print("YYY")
+            #print("YYY")
             return None
         
         #find in array closest x to left, but with y = newy
@@ -226,7 +238,41 @@ class BBArray(object):
         
         #if not found?
         if fx == False:
-            print("XXX")
+            #print("XXX")
+            return None
+                
+        return Point(newx, newy)
+    
+    def findClosestTopRight(self, point):
+        #always outside BBox
+        newy = self.yStart + 1 
+        newx = self.xEnd + 1
+        
+        #find closest y (not necessery True)
+        fy = False
+        for BBPoint in self.array:
+            if BBPoint.y > point.y and BBPoint.y < newy:
+                newy = BBPoint.y
+                fy = True
+        
+        if fy == False:
+            #should never happen
+            return None
+        #else:
+        #    print("Y: %s" % (newy))
+        
+        #find in array closest x to left, but with y = newy
+        # this time it has to be true
+        fx = False
+        for BBPoint in self.array:
+            if BBPoint.mill == True and BBPoint.y == newy and BBPoint.x >= point.x:
+                if newx >= BBPoint.x:
+                    newx = BBPoint.x
+                    fx = True
+        
+        #if not found?
+        if fx == False:
+        #    print("XXX")
             return None
                 
         return Point(newx, newy)
@@ -715,47 +761,60 @@ class PocketMill(object):
             #if self.bbarray.checkIfAny() == False:
             #    return
             
-            #start from left-bottom
-            currentPoint = self.bbarray.findDownLeft()
             
-            line = self.bbarray.findHorizontalWithPoint(currentPoint, 1)
-            print("Left to right line: %s." % (line))
-            
-            #go to right
-            self.stmove.append(line)
-            self.bbarray.removeLine(line)
-            
-            currentPoint = line.Pe
-            goToPoint = self.bbarray.findClosestTopLeft(currentPoint)
-            
-            print("Go from %s to %s." % (currentPoint, goToPoint))
-            
-            if goToPoint == None:
-                print("NONE?!")
-                #break
+            #TODO: check what is closer
+            toRight = True
                 
-            #if not sraight over "end-point", go back under this point 
-            if currentPoint.x != goToPoint.x:
-                self.stmove.append(LineGeo(currentPoint, Point(goToPoint.x, currentPoint.y)))
-                currentPoint = Point(goToPoint.x, currentPoint.y)
-            
-            #go to start point of next line
-            self.stmove.append(LineGeo(currentPoint, Point(currentPoint.x, goToPoint.y)))
-            currentPoint = Point(currentPoint.x, goToPoint.y)
-            self.stmove.append(LineGeo(currentPoint, goToPoint))
-            
-            line = self.bbarray.findHorizontalWithPoint(currentPoint, 0)
-            print("Right to left line: %s. " % (line))
-            self.stmove.append(line)
-            self.bbarray.removeLine(line)
-            
-            
-            #TODO: ltr and rtl on findHorizontalWithPoint
-            
-            
-            
-            
-            print("Removed line.")
-            self.bbarray.print()
-            #ipoint = InterPoint(x=0, y=0, i=0, mill = False)
-            #print("%s" % (ipoint))
+            while self.bbarray.checkIfAny():
+                #This while finds start for new zig-zag and starts it.
+                # Start from left-bottom
+                currentPoint = self.bbarray.findDownLeft()
+                toRight = True
+                                
+                while True:
+                    #Do first line from starting point 
+                    line = self.bbarray.findHorizontalWithPoint(currentPoint, toRight)    #dir
+                    
+                    if toRight == True:
+                        print("Left to right line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                    else:
+                        print("Right to left line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                        
+                    #go to right
+                    self.stmove.append(line)
+                    self.bbarray.removeLine(line)
+                    
+                    currentPoint = line.Pe
+                    
+                    if toRight == True:
+                        goToPoint = self.bbarray.findClosestTopLeft(currentPoint)       #dir
+                    else:
+                        goToPoint = self.bbarray.findClosestTopRight(currentPoint)       #dir
+                    
+                    
+                    #print("Go from %s to %s." % (currentPoint, goToPoint))
+                    
+                    if goToPoint == None:
+                        #print("NONE?!")
+                        print("Cant find closestTop X%8.2f at Y%8.2f." % (currentPoint.x, currentPoint.y))
+                        break
+                        
+                    #TODO: if left closer than right change direction of zig or zag
+                    #TODO: add variable "direction" and check which side is closer
+                        
+                    #if not sraight over "end-point", go back under this point 
+                    #TODO: check if goToPoint lays over current line
+                    if currentPoint.x != goToPoint.x:
+                        self.stmove.append(LineGeo(currentPoint, Point(goToPoint.x, currentPoint.y)))
+                        currentPoint = Point(goToPoint.x, currentPoint.y)
+                    
+                    #go to start point of next line
+                    self.stmove.append(LineGeo(currentPoint, Point(currentPoint.x, goToPoint.y)))
+                    currentPoint = Point(currentPoint.x, goToPoint.y)
+                    self.stmove.append(LineGeo(currentPoint, goToPoint))
+                    
+                    currentPoint = goToPoint
+                    toRight = not toRight
+                    
+                print("Removed lines.")
+                self.bbarray.print()
