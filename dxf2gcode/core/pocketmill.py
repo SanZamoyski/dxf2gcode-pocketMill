@@ -115,6 +115,9 @@ class BBArray(object):
     def append(self, newPoint):
         self.array.append(newPoint)
 
+    #TODO: create one function that returns four extreme points and
+    # than (in main) check what is closest to "current" and then decide
+    # where to start.
     def findTopRight(self):
         #this will be always outside BBox of Shape
         topRight = InterPoint(self.xStart - 1, self.yEnd - 1, 0, False)
@@ -210,6 +213,9 @@ class BBArray(object):
             return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
         
     
+    #TODO: create function findClosestTopLine which returns two points
+    # then check what is closer (in main function) and decide about direction
+    # etc.
     def findClosestTopLeft(self, point):
         #always outside BBox
         newy = self.yStart + 1 
@@ -422,51 +428,86 @@ class PocketMill(object):
             #print("End of finding intersections")
         
     def createLines(self):
+        
+        circle = 0
+        horizontalRectangle = 0
+        geosNum = len(self.stmove.shape.geos)
+        print("Number of geos: %s" % (geosNum))
+        
+        #set the proper direction for the tool path
+        if self.stmove.shape.cw ==True:
+            direction = -1;
+        else:
+            direction = 1;
+        
+        if geosNum == 2:
+            if self.stmove.shape.geos[0].r == self.stmove.shape.geos[1].r and self.stmove.shape.geos[0].Ps == self.stmove.shape.geos[1].Pe and self.stmove.shape.geos[0].Pe == self.stmove.shape.geos[1].Ps:
+                    #print("Circle")
+                    #TODO: tweak? 
+                    circleOff = 0.9 * self.tool_rad #self.stmove.shape.OffsetXY
+                    #direction = 1
+                    circle = 1
+                    
+        if geosNum == 4:
+            hLines = 0
+            vLines = 0
+            linesNum = 0
+            
+            for gLine in self.stmove.shape.geos:
+                if isinstance(gLine, LineGeo) and gLine.Ps.x == gLine.Pe.x:
+                    vLines += 1
+                if isinstance(gLine, LineGeo) and gLine.Ps.y == gLine.Pe.y:
+                    hLines += 1
+                    
+            if hLines == 2 and vLines == 2:
+                horizontalRectangle = 1
+                
+            hRectangleOff = 0.9 * self.tool_rad #self.stmove.shape.OffsetXY
+                
+            #print("Rectangle? V:%s, H:%s" % (vLines, hLines))
+                
+        
         if False:
             print("beans shape")
             #TODO:
             #   ____
             #  (____)
-        elif False:
-            #TODO if two half-arcs and starts and ends in same place, use:
-            #for circular pocket
-            
-            numberofrotations = int((self.stmove.shape.geos[0].r - self.tool_rad)/self.stmove.shape.OffsetXY)-1
-            if ((self.stmove.shape.geos[0].r - self.tool_rad)/self.stmove.shape.OffsetXY)> numberofrotations :
+        elif circle == 1:            
+            numberofrotations = int((self.stmove.shape.geos[0].r - self.tool_rad)/circleOff)-1
+            if ((self.stmove.shape.geos[0].r - self.tool_rad)/circleOff)> numberofrotations :
                 numberofrotations += 1
             logger.debug("stmove:make_start_moves:Tool Radius: %f" % (self.tool_rad))
-            logger.debug("stmove:make_start_moves:StepOver XY: %f" % (self.stmove.shape.OffsetXY))
+            logger.debug("stmove:make_start_moves:StepOver XY: %f" % (circleOff))
             logger.debug("stmove:make_start_moves:Shape Radius: %f" % (self.stmove.shape.geos[0].r))
             logger.debug("stmove:make_start_moves:Shape Origin at: %f,%f" % (self.stmove.shape.geos[0].O.x, self.stmove.shape.geos[0].O.y))
             logger.debug("stmove:make_start_moves:Number of Arcs: %f" % (numberofrotations+1))
             for i in range(0, numberofrotations + 1):
                 st_point = Point(self.stmove.shape.geos[0].O.x,self.stmove.shape.geos[0].O.y)
-                Ps_point = Point(self.stmove.shape.geos[0].O.x +(self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,self.stmove.shape.geos[0].O.y)
+                Ps_point = Point(self.stmove.shape.geos[0].O.x +(self.tool_rad + (i*circleOff)) ,self.stmove.shape.geos[0].O.y)
                 Pe_point = Ps_point
                 if ((Ps_point.x - self.stmove.shape.geos[0].O.x + self.tool_rad) < self.stmove.shape.geos[0].r):
-                    self.stmove.append(ArcGeo(Ps=Ps_point, Pe=Pe_point, O=st_point, r=(self.tool_rad + (i*self.stmove.shape.OffsetXY)), direction=direction))
+                    self.stmove.append(ArcGeo(Ps=Ps_point, Pe=Pe_point, O=st_point, r=(self.tool_rad + (i*circleOff)), direction=direction))
                 else:
                     Ps_point = Point(self.stmove.shape.geos[0].O.x + self.stmove.shape.geos[0].r - self.tool_rad  ,self.stmove.shape.geos[0].O.y)
                     Pe_point = Ps_point
                     self.stmove.append(ArcGeo(Ps=Ps_point, Pe=Pe_point, O=st_point, r=(Ps_point.x - self.stmove.shape.geos[0].O.x), direction=direction))
                 
-                print("B stmove:make_start_moves:Toolpath Arc at: %f,%f" % (Ps_point.x,Ps_point.x))  
                 logger.debug("stmove:make_start_moves:Toolpath Arc at: %f,%f" % (Ps_point.x,Ps_point.x))   
                 
                 if i<numberofrotations:
                     st_point = Point(Ps_point.x,Ps_point.y)
-                    if ((Ps_point.x + self.stmove.shape.OffsetXY - self.stmove.shape.geos[0].O.x + self.tool_rad) < self.stmove.shape.geos[0].r):
-                        en_point = Point(Ps_point.x + self.stmove.shape.OffsetXY,Ps_point.y)
+                    if ((Ps_point.x + circleOff - self.stmove.shape.geos[0].O.x + self.tool_rad) < self.stmove.shape.geos[0].r):
+                        en_point = Point(Ps_point.x + circleOff,Ps_point.y)
                     else:
                         en_point = Point(self.stmove.shape.geos[0].O.x + self.stmove.shape.geos[0].r - self.tool_rad,Ps_point.y)
                         
                     self.stmove.append(LineGeo(st_point,en_point))
                         
-        elif False:
+        elif horizontalRectangle == 1:
             #TODO: if 4 lines, and they are parallel
             #for rectangular pocket
             
-            print('D Rectangular pocket: ')
+            #print('D Rectangular pocket: ')
             
             #get Rectangle width and height
             firstgeox = abs(self.stmove.shape.geos[0].Ps.x - self.stmove.shape.geos[0].Pe.x)
@@ -500,25 +541,25 @@ class PocketMill(object):
             Centerpt = Point(Pocketx/2 + minx, Pockety/2 +miny)
             # calc number of rotations
             if Pockety > Pocketx:
-                numberofrotations = int(((Pocketx/2) - self.tool_rad)/self.stmove.shape.OffsetXY)#+1
-                if (((Pocketx/2) - self.tool_rad)/self.stmove.shape.OffsetXY)> int(((Pocketx/2) - self.tool_rad)/self.stmove.shape.OffsetXY)+0.5 :
+                numberofrotations = int(((Pocketx/2) - self.tool_rad)/hRectangleOff)#+1
+                if (((Pocketx/2) - self.tool_rad)/hRectangleOff)> int(((Pocketx/2) - self.tool_rad)/hRectangleOff)+0.5 :
                     numberofrotations += 1
             else:
-                numberofrotations = int(((Pockety/2) - self.tool_rad)/self.stmove.shape.OffsetXY)#+1
-                if (((Pockety/2) - self.tool_rad)/self.stmove.shape.OffsetXY)> int(((Pockety/2) - self.tool_rad)/self.stmove.shape.OffsetXY)+0.5 :
+                numberofrotations = int(((Pockety/2) - self.tool_rad)/hRectangleOff)#+1
+                if (((Pockety/2) - self.tool_rad)/hRectangleOff)> int(((Pockety/2) - self.tool_rad)/hRectangleOff)+0.5 :
                     numberofrotations += 1
             logger.debug("stmove:make_start_moves:Shape Center at: %f,%f" % (Centerpt.x, Centerpt.y))  
-            print("E stmove:make_start_moves:Shape Center at: %f,%f" % (Centerpt.x, Centerpt.y))        
+            #print("E stmove:make_start_moves:Shape Center at: %f,%f" % (Centerpt.x, Centerpt.y))        
             for i in range(0, numberofrotations):
                 # for CCW Climb milling
                 if Pockety > Pocketx: 
-                    if (Centerpt.y - (Pockety-Pocketx)/2 - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) - self.tool_rad >= miny):
-                        Ps_point1 = Point(Centerpt.x +(self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) )
-                        Pe_point1 = Point(Centerpt.x -(self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) )
+                    if (Centerpt.y - (Pockety-Pocketx)/2 - (self.tool_rad + (i*hRectangleOff)) - self.tool_rad >= miny):
+                        Ps_point1 = Point(Centerpt.x +(self.tool_rad + (i*hRectangleOff)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.tool_rad + (i*hRectangleOff))) )
+                        Pe_point1 = Point(Centerpt.x -(self.tool_rad + (i*hRectangleOff)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.tool_rad + (i*hRectangleOff))) )
                         Ps_point2 = Pe_point1
-                        Pe_point2 = Point(Centerpt.x -(self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y - ((Pockety-Pocketx)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) )
+                        Pe_point2 = Point(Centerpt.x -(self.tool_rad + (i*hRectangleOff)) ,Centerpt.y - ((Pockety-Pocketx)/2 +(self.tool_rad + (i*hRectangleOff))) )
                         Ps_point3 = Pe_point2
-                        Pe_point3 = Point(Centerpt.x +(self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y - ((Pockety-Pocketx)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) )
+                        Pe_point3 = Point(Centerpt.x +(self.tool_rad + (i*hRectangleOff)) ,Centerpt.y - ((Pockety-Pocketx)/2 +(self.tool_rad + (i*hRectangleOff))) )
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     else:
@@ -531,24 +572,24 @@ class PocketMill(object):
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
-                    print("F stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
+                    #print("F stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     if direction == 1: # this is CCW
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
                         self.stmove.append(LineGeo(Ps_point4,Pe_point4))
-                        print('X Lines added [CCW]: ')
-                        print('Point ' + Ps_point1 + 'x' + Pe_point1)
-                        print('Point ' + Ps_point2 + 'x' + Pe_point2)
-                        print('Point ' + Ps_point3 + 'x' + Pe_point3)
-                        print('Point ' + Ps_point4 + 'x' + Pe_point4)
+                        #print('X Lines added [CCW]: ')
+                        #print('Point ' + Ps_point1 + 'x' + Pe_point1)
+                        #print('Point ' + Ps_point2 + 'x' + Pe_point2)
+                        #print('Point ' + Ps_point3 + 'x' + Pe_point3)
+                        #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
                         self.stmove.append(LineGeo(Pe_point1,Ps_point1))
-                        print('Y Lines added [CW]: ')
+                        #print('Y Lines added [CW]: ')
                         print("Line from: %fx%f to %fx%f" % (Ps_point1.x, Ps_point1.y, Pe_point1.x, Pe_point1.y))
                         print("Line from: %fx%f to %fx%f" % (Ps_point2.x, Ps_point2.y, Pe_point2.x, Pe_point2.y))
                         print("Line from: %fx%f to %fx%f" % (Ps_point3.x, Ps_point3.y, Pe_point3.x, Pe_point3.y))
@@ -559,20 +600,20 @@ class PocketMill(object):
                             st_point = Point(Ps_point1.x,Ps_point1.y)
                         else: # this is CW
                             st_point = Point(Pe_point4.x,Pe_point4.y)
-                        if (Centerpt.y - (Pockety-Pocketx)/2 - (self.tool_rad + ((i+1)*self.stmove.shape.OffsetXY)) - self.tool_rad >= miny):
-                            en_point = Point(Ps_point1.x + self.stmove.shape.OffsetXY,Ps_point1.y + self.stmove.shape.OffsetXY)
+                        if (Centerpt.y - (Pockety-Pocketx)/2 - (self.tool_rad + ((i+1)*hRectangleOff)) - self.tool_rad >= miny):
+                            en_point = Point(Ps_point1.x + hRectangleOff,Ps_point1.y + hRectangleOff)
                         else:
                             en_point = Point(Centerpt.x + Pocketx/2 - self.tool_rad,Centerpt.y + Pockety/2 - self.tool_rad)
                                 
                         self.stmove.append(LineGeo(st_point,en_point))
                 elif Pocketx > Pockety:
-                    if (Centerpt.x - (Pocketx-Pockety)/2 - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) - self.tool_rad >= minx):
-                        Ps_point1 = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) ,Centerpt.y + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
-                        Pe_point1 = Point(Centerpt.x - ((Pocketx-Pockety)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) ,Centerpt.y + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                    if (Centerpt.x - (Pocketx-Pockety)/2 - (self.tool_rad + (i*hRectangleOff)) - self.tool_rad >= minx):
+                        Ps_point1 = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.tool_rad + (i*hRectangleOff))) ,Centerpt.y + (self.tool_rad + (i*hRectangleOff)) )
+                        Pe_point1 = Point(Centerpt.x - ((Pocketx-Pockety)/2 +(self.tool_rad + (i*hRectangleOff))) ,Centerpt.y + (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point2 = Pe_point1
-                        Pe_point2 = Point(Centerpt.x - ((Pocketx-Pockety)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) ,Centerpt.y - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                        Pe_point2 = Point(Centerpt.x - ((Pocketx-Pockety)/2 +(self.tool_rad + (i*hRectangleOff))) ,Centerpt.y - (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point3 = Pe_point2
-                        Pe_point3 = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.tool_rad + (i*self.stmove.shape.OffsetXY))) ,Centerpt.y - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                        Pe_point3 = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.tool_rad + (i*hRectangleOff))) ,Centerpt.y - (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     else:
@@ -585,48 +626,48 @@ class PocketMill(object):
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
-                    print("G stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
+                    #print("G stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     if direction == 1: # this is CCW
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
                         self.stmove.append(LineGeo(Ps_point4,Pe_point4))
-                        print('Z Lines added [CCW]: ')
-                        print('Point ' + Ps_point1 + 'x' + Pe_point1)
-                        print('Point ' + Ps_point2 + 'x' + Pe_point2)
-                        print('Point ' + Ps_point3 + 'x' + Pe_point3)
-                        print('Point ' + Ps_point4 + 'x' + Pe_point4)
+                        #print('Z Lines added [CCW]: ')
+                        #print('Point ' + Ps_point1 + 'x' + Pe_point1)
+                        #print('Point ' + Ps_point2 + 'x' + Pe_point2)
+                        #print('Point ' + Ps_point3 + 'x' + Pe_point3)
+                        #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
                         self.stmove.append(LineGeo(Pe_point1,Ps_point1))
-                        print('Q Lines added [CW]: ')
-                        print('Point ' + Ps_point1 + 'x' + Pe_point1)
-                        print('Point ' + Ps_point2 + 'x' + Pe_point2)
-                        print('Point ' + Ps_point3 + 'x' + Pe_point3)
-                        print('Point ' + Ps_point4 + 'x' + Pe_point4)
+                        #print('Q Lines added [CW]: ')
+                        #print('Point ' + Ps_point1 + 'x' + Pe_point1)
+                        #print('Point ' + Ps_point2 + 'x' + Pe_point2)
+                        #print('Point ' + Ps_point3 + 'x' + Pe_point3)
+                        #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     if i<numberofrotations-1:
                         if direction == 1: # this is CCW
                             st_point = Point(Ps_point1.x,Ps_point1.y)
                         else: # this is CW
                             st_point = Point(Pe_point4.x,Pe_point4.y)
-                        if (Centerpt.x - (Pocketx-Pockety)/2 - (self.tool_rad + ((i+1)*self.stmove.shape.OffsetXY)) - self.tool_rad >= minx):
-                            en_point = Point(Ps_point1.x + self.stmove.shape.OffsetXY,Ps_point1.y + self.stmove.shape.OffsetXY)
+                        if (Centerpt.x - (Pocketx-Pockety)/2 - (self.tool_rad + ((i+1)*hRectangleOff)) - self.tool_rad >= minx):
+                            en_point = Point(Ps_point1.x + hRectangleOff,Ps_point1.y + hRectangleOff)
                         else:
                             en_point = Point(Centerpt.x + Pocketx/2 - self.tool_rad,Centerpt.y + Pockety/2 - self.tool_rad)
                                 
                         self.stmove.append(LineGeo(st_point,en_point))
                 elif Pocketx == Pockety:
-                    if (Centerpt.x - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) - self.tool_rad >= minx):
-                        Ps_point1 = Point(Centerpt.x + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
-                        Pe_point1 = Point(Centerpt.x - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                    if (Centerpt.x - (self.tool_rad + (i*hRectangleOff)) - self.tool_rad >= minx):
+                        Ps_point1 = Point(Centerpt.x + (self.tool_rad + (i*hRectangleOff)) ,Centerpt.y + (self.tool_rad + (i*hRectangleOff)) )
+                        Pe_point1 = Point(Centerpt.x - (self.tool_rad + (i*hRectangleOff)) ,Centerpt.y + (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point2 = Pe_point1
-                        Pe_point2 = Point(Centerpt.x - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                        Pe_point2 = Point(Centerpt.x - (self.tool_rad + (i*hRectangleOff)) ,Centerpt.y - (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point3 = Pe_point2
-                        Pe_point3 = Point(Centerpt.x + (self.tool_rad + (i*self.stmove.shape.OffsetXY)) ,Centerpt.y - (self.tool_rad + (i*self.stmove.shape.OffsetXY)) )
+                        Pe_point3 = Point(Centerpt.x + (self.tool_rad + (i*hRectangleOff)) ,Centerpt.y - (self.tool_rad + (i*hRectangleOff)) )
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     else:
@@ -639,48 +680,55 @@ class PocketMill(object):
                         Ps_point4 = Pe_point3
                         Pe_point4 = Ps_point1
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y)) 
-                    print("H stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y)) 
+                    #print("H stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y)) 
                     if direction == 1: # this is CCW
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
                         self.stmove.append(LineGeo(Ps_point4,Pe_point4))
                         
-                        print('V Lines added [CCW]: ')
-                        print('Point ' + Ps_point1 + 'x' + Pe_point1)
-                        print('Point ' + Ps_point2 + 'x' + Pe_point2)
-                        print('Point ' + Ps_point3 + 'x' + Pe_point3)
-                        print('Point ' + Ps_point4 + 'x' + Pe_point4)
+                        #print('V Lines added [CCW]: ')
+                        #print('Point ' + Ps_point1 + 'x' + Pe_point1)
+                        #print('Point ' + Ps_point2 + 'x' + Pe_point2)
+                        #print('Point ' + Ps_point3 + 'x' + Pe_point3)
+                        #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
                         self.stmove.append(LineGeo(Pe_point1,Ps_point1))
-                        print('P Lines added [CW]: ')
-                        print('Point ' + Ps_point1 + 'x' + Pe_point1)
-                        print('Point ' + Ps_point2 + 'x' + Pe_point2)
-                        print('Point ' + Ps_point3 + 'x' + Pe_point3)
-                        print('Point ' + Ps_point4 + 'x' + Pe_point4)
+                        #print('P Lines added [CW]: ')
+                        #print('Point ' + Ps_point1 + 'x' + Pe_point1)
+                        #print('Point ' + Ps_point2 + 'x' + Pe_point2)
+                        #print('Point ' + Ps_point3 + 'x' + Pe_point3)
+                        #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     if i<numberofrotations-1:
                         if direction == 1: # this is CCW
                             st_point = Point(Ps_point1.x,Ps_point1.y)
                         else: # this is CW
                             st_point = Point(Pe_point4.x,Pe_point4.y)
-                        if (Centerpt.x - (self.tool_rad + ((i+1)*self.stmove.shape.OffsetXY)) - self.tool_rad >= minx):
-                            en_point = Point(Ps_point1.x + self.stmove.shape.OffsetXY,Ps_point1.y + self.stmove.shape.OffsetXY)
+                        if (Centerpt.x - (self.tool_rad + ((i+1)*hRectangleOff)) - self.tool_rad >= minx):
+                            en_point = Point(Ps_point1.x + hRectangleOff,Ps_point1.y + hRectangleOff)
                         else:
                             en_point = Point(Centerpt.x + Pocketx/2 - self.tool_rad,Centerpt.y + Pockety/2 - self.tool_rad)
                                 
                         self.stmove.append(LineGeo(st_point,en_point))
             
-            #TODO
-            
-        elif True:
+        else:
             #distances between  map of points to check
-            #TODO: different distances in X (smaller) and Y
+            #TODO?: different distances in X (smaller) and Y
+            # TODO: Y distance should be calculated
             self.diff = self.tool_rad*0.9
+            
+            compType = self.stmove.shape.cut_cor
+            
+            #Compensation:
+            # 42 - inside
+            # 41 - outside
+            # 40 - no compensation
+            print("Compensations type: %s." % (compType))
             
             #print('BB: ' + self.stmove.shape.BB)
             print("self.stmove.BB: %s" % self.stmove.shape.BB)
@@ -704,7 +752,8 @@ class PocketMill(object):
             print("End of empty array.")
             
             ### check if point is not to close to shape
-            self.removeNearShape()
+            if compType == 42:
+                self.removeNearShape()
             
             print("Array without Shape: ")
             self.bbarray.print()
@@ -725,45 +774,7 @@ class PocketMill(object):
             ### Cool! We have now complete array of pionts to mill
             ### but we need to convert it into LINES now...
                     
-            #while True:
-            #    #this will be always outside BBox of Shape
-            #    startPoint = Point(self.bbarray.xStart - 1, self.bbarray.yEnd - 1)
-            #    
-            #    #BBArrayIndex = 0
-            #    for BBPoint in self.bbarray.array:
-            #        
-            #        if BBPoint.mill == True:
-            #            if startPoint.y < yi:
-            #                startPoint = Point(xi, yi)
-            #            #elif startPoint.y == yi and startPoint.x < xi
-            #            #    startPoint = Point(xi, yi)
-            #            
-            #        xi += self.diff
-            #        if self.bbarray.xEnd <= xi:
-            #            xi = self.bbarray.xStart + self.diff
-            #            yi -= self.diff
-            #            
-            #        #BBArrayIndex += 1  
-            #        
-            #    break
-            
-            #for gg in self.stmove.shape.geos.abs_iter():
-            #    if isinstance(gg, LineGeo):
-            #        print('Line: ')
-            #    elif isinstance(gg, ArcGeo):
-            #        print(' Arc: ')
-            #        #gg.calc_bounding_box()
-            #        #print('Bounding box: ' + gg.BB)
-            #    #if (isinstance(self.stmove.selectedItems[0].geos[0], ArcGeo)
-            #    print(gg)
-            
-            #if there are none milling points end function
-            #if self.bbarray.checkIfAny() == False:
-            #    return
-            
-            
             #TODO: check what is closer
-            toRight = True
                 
             while self.bbarray.checkIfAny():
                 #This while finds start for new zig-zag and starts it.

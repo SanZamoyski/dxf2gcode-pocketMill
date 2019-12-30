@@ -94,26 +94,11 @@ class StMove(object):
         start = self.start
         angle = self.angle
 
-        #set the proper direction for the tool path
-        if self.shape.cw ==True:
-            direction = -1;
-        else:
-            direction = 1;
-
-        # Pocket Milling - draw toolpath
-        if self.shape.Pocket == True:
-            
-            pocket = PocketMill(self)
-            pocket.createLines()
-            
-            #dummy last line
-            self.append(LineGeo(Point(10.1, 11.3), Point(20.1, 21.3)))
-                      
         ### drill cutted from here
             
         if self.shape.cut_cor == 40:
-            if self.shape.Pocket == False:
-                self.append(RapidPos(start))
+            #if self.shape.Pocket == False:
+            self.append(RapidPos(start))
             
         elif self.shape.cut_cor != 40 and not g.config.vars.Cutter_Compensation["done_by_machine"]:
 
@@ -170,6 +155,15 @@ class StMove(object):
             start_rad = ArcGeo(Ps=Ps_ein, Pe=start, O=Oein,
                                r=start_rad + tool_rad, direction=0)
             self.append(start_rad)
+            
+        # Pocket Milling - draw toolpath
+        if self.shape.Pocket == True:
+            
+            pocket = PocketMill(self)
+            pocket.createLines()
+            
+            #dummy last line
+            #self.append(LineGeo(Point(10.1, 11.3), Point(20.1, 21.3)))
 
     def make_swivelknife_move(self):
         """

@@ -589,15 +589,17 @@ class Shape(object):
         mom_depth = initial_mill_depth
 
         # Move the tool to the start.
-        if self.Pocket == True:
-            mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0].Ps)
-            exstr += mylinegeo.Write_GCode(PostPro)
-        elif self.Drill == True:
-            mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0])
-            exstr += mylinegeo.Write_GCode(PostPro)
-        else:
-            exstr += self.stmove.geos.abs_el(0).Write_GCode(PostPro)
-            
+        #if self.Pocket == True:
+        #    mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0].Ps)
+        #    exstr += mylinegeo.Write_GCode(PostPro)
+        #elif self.Drill == True:
+        #    mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0])
+        #    exstr += mylinegeo.Write_GCode(PostPro)
+        #else:
+        #    exstr += self.stmove.geos.abs_el(0).Write_GCode(PostPro)
+
+        exstr += self.stmove.geos.abs_el(0).Write_GCode(PostPro)
+
         # Add string to be added before the shape will be cut.
         exstr += PostPro.write_pre_shape_cut()
 
@@ -625,25 +627,28 @@ class Shape(object):
             exstr += self.stmove.geos.abs_el(2).Write_GCode(PostPro)
 
         # Write the geometries for the first cut
-        if self.Pocket == True:
-            for geo in self.stmove.geos.abs_iter():
-                exstr += self.Write_GCode_for_geo(geo, PostPro)
-            mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
-            exstr += mylinegeo.Write_GCode(PostPro)
-        elif self.Drill == True:
-            #do nothing
-            logger.debug(self.tr("Debug: Gcode Drill"))
-            myholegeo = HoleGeo(self.geos[0].O)
-            myholegeo.z_pos = self.axis3_mill_depth
-            myholegeo.Q = self.axis3_mill_depth
-            myholegeo.R = self.parentLayer.axis3_safe_margin
-            myholegeo.DrillType = self.DrillType
-            myholegeo.DFeed = self.f_g1_depth
-            exstr += myholegeo.Write_GCode(PostPro) 
-        else:
-            for geo in new_geos.abs_iter():
-                exstr += self.Write_GCode_for_geo(geo, PostPro)
-                
+        #if self.Pocket == True:
+        #    for geo in self.stmove.geos.abs_iter():
+        #        exstr += self.Write_GCode_for_geo(geo, PostPro)
+        #    mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
+        #    exstr += mylinegeo.Write_GCode(PostPro)
+        #elif self.Drill == True:
+        #    #do nothing
+        #    logger.debug(self.tr("Debug: Gcode Drill"))
+        #    myholegeo = HoleGeo(self.geos[0].O)
+        #    myholegeo.z_pos = self.axis3_mill_depth
+        #    myholegeo.Q = self.axis3_mill_depth
+        #    myholegeo.R = self.parentLayer.axis3_safe_margin
+        #    myholegeo.DrillType = self.DrillType
+        #    myholegeo.DFeed = self.f_g1_depth
+        #    exstr += myholegeo.Write_GCode(PostPro) 
+        #else:
+        #    for geo in new_geos.abs_iter():
+        #        exstr += self.Write_GCode_for_geo(geo, PostPro)
+        
+        for geo in new_geos.abs_iter():
+            exstr += self.Write_GCode_for_geo(geo, PostPro)
+        
         # Turning the cutter radius compensation
         if self.cut_cor != 40 and PostPro.vars.General["cancel_cc_for_depth"]:
             exstr += PostPro.deactivate_cut_cor()
@@ -683,13 +688,16 @@ class Shape(object):
 
             #for geo in new_geos.abs_iter():
             #    exstr += self.Write_GCode_for_geo(geo, PostPro)
-            if self.Pocket == True:
-                for geo in self.stmove.geos.abs_iter():
-                    exstr += self.Write_GCode_for_geo(geo, PostPro)
-            else:
-                for geo in new_geos.abs_iter():
-                    exstr += self.Write_GCode_for_geo(geo, PostPro)
-                    
+            #if self.Pocket == True:
+            #    for geo in self.stmove.geos.abs_iter():
+            #        exstr += self.Write_GCode_for_geo(geo, PostPro)
+            #else:
+            #    for geo in new_geos.abs_iter():
+            #        exstr += self.Write_GCode_for_geo(geo, PostPro)
+            
+            for geo in new_geos.abs_iter():
+                exstr += self.Write_GCode_for_geo(geo, PostPro)
+            
             # Move the tool to the start.
             if self.Pocket == True and mom_depth > depth:
                 mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
