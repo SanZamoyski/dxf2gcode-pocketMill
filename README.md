@@ -6,4 +6,4 @@ This version generally works - conception seems to be ok.
 Original hammertownhead modifications are still used in many places but some are removed, some are modified and "reused".
 
 There are many things marked as TODO but it generates quite good g-code output.
-This is Alpha version as it does work yet but is buggy!
+This is Alpha version as it does work, but is buggy!
