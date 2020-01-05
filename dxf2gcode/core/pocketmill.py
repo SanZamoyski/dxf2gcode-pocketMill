@@ -89,6 +89,9 @@ class BBArray(object):
             self.yEnd   = bbStartPoint.y
             
         self.diff = diff
+        self.overUpRight = Point(self.xStart + 1, self.xStart + 1)
+        self.overDownLeft = Point(self.xEnd - 1, self.xEnd - 1)
+        self.overDistance = self.overUpRight.distance(self.overDownLeft)
             
     def create(self):
         arrayIndex = 0 
@@ -216,6 +219,83 @@ class BBArray(object):
     #TODO: create function findClosestTopLine which returns two points
     # then check what is closer (in main function) and decide about direction
     # etc.
+    def findClosestLine(self, point):
+        newPoint = self.overUpRight #doesnt matter
+        distance = newPoint.distance(self.overDownLeft)
+        new = False
+                
+        for BBPoint in self.array:
+            if BBPoint.mill == False:
+                #if this point is not for mill, go next
+                continue
+            
+            #if top == True and BBPoint.y > point.y:
+            #    if newPoint.y > BBPoint.y:
+            #        continue
+            #    
+            #elif top == False and BBPoint.y < point.y:
+            #    if newPoint.y > BBPoint.y:
+            #        continue
+            
+            if point.distance(BBPoint.p) > distance:
+                continue
+            
+            #if it is under when has to be or top ihas to be
+            # remember as new point
+            distance = point.distance(BBPoint.p)
+            newPoint = BBPoint
+            new = True
+                    
+        if new is True:
+            #find line with this point
+            return self.findHorizontalWithPoint(newPoint)
+        
+    def findClosestEnd(self, point):
+        bottomY    = self.yStart + 1
+        topY = self.yEnd - 1
+        
+        for BBPoint in self.array:
+            if BBPoint.mill == True:
+                if BBPoint.y > topY:
+                    topY = BBPoint.y
+                if BBPoint.y < bottomY:
+                    bottomY = BBPoint.y
+        
+        topLeftX     = self.xEnd - 1 
+        topRightX    = self.xStart + 1
+        bottomLeftX  = self.xEnd - 1
+        bottomRightX = self.xStart + 1
+        
+        for BBPoint in self.array:
+            if BBPoint.mill == True:
+                if BBPoint.y == topY:
+                    if BBPoint.x < topLeftX:
+                        topLeftX = BBPoint.x
+                    if BBPoint.x > topRightX:
+                        topRightX = BBPoint.x
+                if BBPoint.y == bottomY:
+                    if BBPoint.x < bottomLeftX:
+                        bottomLeftX = BBPoint.x
+                    if BBPoint.x > bottomRightX:
+                        bottomRightX = BBPoint.x
+                        
+        points = [
+            Point(topLeftX, topY),
+            Point(topRightX, topY),
+            Point(bottomLeftX, bottomY),
+            Point(bottomRightX, bottomY)]
+        
+        distance = self.overDistance
+        closestPoint = None
+        
+        for p in points:
+            print("Extreme: %s." % (p))
+            if point.distance(p) < distance:
+                distance = point.distance(p)
+                closestPoint = p
+                
+        return closestPoint        
+    
     def findClosestTopLeft(self, point):
         #always outside BBox
         newy = self.yStart + 1 
@@ -431,6 +511,7 @@ class PocketMill(object):
         
         circle = 0
         horizontalRectangle = 0
+        
         geosNum = len(self.stmove.shape.geos)
         print("Number of geos: %s" % (geosNum))
         
@@ -439,6 +520,8 @@ class PocketMill(object):
             direction = -1;
         else:
             direction = 1;
+            
+        print("Starting point is: %s" % (self.stmove.start))
         
         if geosNum == 2:
             if self.stmove.shape.geos[0].r == self.stmove.shape.geos[1].r and self.stmove.shape.geos[0].Ps == self.stmove.shape.geos[1].Pe and self.stmove.shape.geos[0].Pe == self.stmove.shape.geos[1].Ps:
@@ -771,18 +854,36 @@ class PocketMill(object):
             print("End of final array.")
                                 
             ### ### ###
-            ### Cool! We have now complete array of pionts to mill
+            ### Cool! We have now complete array of points to mill
             ### but we need to convert it into LINES now...
                     
             #TODO: check what is closer
+            
+            #currentPoint = Point(self.stmove.start.x, self.stmove.start.y)
+            currentPoint = self.stmove.start
                 
             while self.bbarray.checkIfAny():
                 #This while finds start for new zig-zag and starts it.
                 # Start from left-bottom
-                currentPoint = self.bbarray.findDownLeft()
-                toRight = True
-                                
+                #goToPoint = self.bbarray.findDownLeft()
+                #closestLine = self.bbarray.findClosestLine(currentPoint)
+                closestPoint = self.bbarray.findClosestEnd(currentPoint)
+                closestLine = self.bbarray.findHorizontalWithPoint(closestPoint)
+                print("Closest end line to start is %s." % (closestLine))
+                print("Closest point to start is %s." % (closestPoint))
+            
+                if closestLine.Ps.distance(currentPoint) > closestLine.Pe.distance(currentPoint):
+                    toRight = False
+                    goToPoint = closestLine.Pe
+                else:
+                    toRight = True
+                    goToPoint = closestLine.Ps
+                
+                self.stmove.append(LineGeo(currentPoint, goToPoint))
+                currentPoint = goToPoint
+                                                
                 while True:
+                    #currentPoint should be one of bbarray.mill = true now
                     #Do first line from starting point 
                     line = self.bbarray.findHorizontalWithPoint(currentPoint, toRight)    #dir
                     
@@ -790,6 +891,9 @@ class PocketMill(object):
                         print("Left to right line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
                     else:
                         print("Right to left line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                        
+                    if currentPoint.x != line.Ps:
+                        self.stmove.append(LineGeo(currentPoint, line.Ps))                        
                         
                     #go to right
                     self.stmove.append(line)

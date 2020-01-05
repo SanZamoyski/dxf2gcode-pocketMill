@@ -238,6 +238,7 @@ class Shape(object):
             
         ### drill cut here
         
+        """
         if PPocket ==True:
             #Calculate the start and end points for pocket entry and exit for a circular pocket
             if isinstance(self.geos[0],ArcGeo):  
@@ -329,7 +330,7 @@ class Shape(object):
                         return st_point,3.14
                 else:
                     return en_point,direction*(-1.57)
-            
+        """    
         
         if start_point or self.closed:
             return self.get_start_end_points(start_point, angles)
@@ -362,6 +363,7 @@ class Shape(object):
         else:
             direction = 1;
         
+        """
         if Drill == True:
             st_point = Point(self.geos[0].O.x,self.geos[0].O.y)
             en_point = Point(self.geos[0].O.x,self.geos[0].O.y)    
@@ -463,7 +465,9 @@ class Shape(object):
                         return st_point,3.14
                 else:
                     return en_point,direction*(-1.57)
-                
+        
+        """
+        
         if start_point is None:
             return (self.geos.abs_el(0).get_start_end_points(True, angles),
                     self.geos.abs_el(-1).get_start_end_points(False, angles))
