@@ -250,6 +250,19 @@ class BBArray(object):
             #find line with this point
             return self.findHorizontalWithPoint(newPoint)
         
+    def findNextLine(self, line, preferTop):
+        bottomY = self.yEnd - 1
+        topY    = self.yStart + 1
+        currentY = line.Ps.y
+        
+        for BBPoint in self.array:
+            #We do not check if it is set to mill, since
+            # we want to eliminate lines that are too far
+            if topY > BBPoint.y and currentY < BBPoint.y:
+                topY = BBPoint.y
+            if bottomY < BBPoint.y and currentY > BBPoint.y:
+                bottomY = BBPoint.y
+        
     def findClosestEnd(self, point):
         bottomY    = self.yStart + 1
         topY = self.yEnd - 1
@@ -545,11 +558,13 @@ class PocketMill(object):
             if hLines == 2 and vLines == 2:
                 horizontalRectangle = 1
                 
-            hRectangleOff = 0.9 * self.tool_rad #self.stmove.shape.OffsetXY
+            #rad varsus rad*2^(1/2) is 0,707106781
+            hRectangleOff = 0.7 * self.tool_rad #self.stmove.shape.OffsetXY
                 
             #print("Rectangle? V:%s, H:%s" % (vLines, hLines))
                 
-        
+        currentPoint = self.stmove.start
+            
         if False:
             print("beans shape")
             #TODO:
@@ -657,6 +672,9 @@ class PocketMill(object):
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     #print("F stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     if direction == 1: # this is CCW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Ps_point1))
+                        
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
@@ -668,15 +686,18 @@ class PocketMill(object):
                         #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Pe_point4))
+                            
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
                         self.stmove.append(LineGeo(Pe_point1,Ps_point1))
                         #print('Y Lines added [CW]: ')
-                        print("Line from: %fx%f to %fx%f" % (Ps_point1.x, Ps_point1.y, Pe_point1.x, Pe_point1.y))
-                        print("Line from: %fx%f to %fx%f" % (Ps_point2.x, Ps_point2.y, Pe_point2.x, Pe_point2.y))
-                        print("Line from: %fx%f to %fx%f" % (Ps_point3.x, Ps_point3.y, Pe_point3.x, Pe_point3.y))
                         print("Line from: %fx%f to %fx%f" % (Ps_point4.x, Ps_point4.y, Pe_point4.x, Pe_point4.y))
+                        print("Line from: %fx%f to %fx%f" % (Ps_point3.x, Ps_point3.y, Pe_point3.x, Pe_point3.y))
+                        print("Line from: %fx%f to %fx%f" % (Ps_point2.x, Ps_point2.y, Pe_point2.x, Pe_point2.y))
+                        print("Line from: %fx%f to %fx%f" % (Ps_point1.x, Ps_point1.y, Pe_point1.x, Pe_point1.y))
                         
                     if i<numberofrotations-1:
                         if direction == 1: # this is CCW
@@ -711,6 +732,9 @@ class PocketMill(object):
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     #print("G stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y))
                     if direction == 1: # this is CCW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Ps_point1))
+                            
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
@@ -722,6 +746,9 @@ class PocketMill(object):
                         #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Pe_point4))
+                            
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
@@ -765,6 +792,9 @@ class PocketMill(object):
                     logger.debug("stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y)) 
                     #print("H stmove:make_start_moves:Starting point at: %f,%f" % (Ps_point1.x, Ps_point1.y)) 
                     if direction == 1: # this is CCW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Ps_point1))
+                            
                         self.stmove.append(LineGeo(Ps_point1,Pe_point1))
                         self.stmove.append(LineGeo(Ps_point2,Pe_point2))
                         self.stmove.append(LineGeo(Ps_point3,Pe_point3))
@@ -777,6 +807,9 @@ class PocketMill(object):
                         #print('Point ' + Ps_point4 + 'x' + Pe_point4)
                         
                     else: # this is CW
+                        if i == 0:
+                            self.stmove.append(LineGeo(currentPoint, Pe_point4))
+                            
                         self.stmove.append(LineGeo(Pe_point4,Ps_point4))
                         self.stmove.append(LineGeo(Pe_point3,Ps_point3))
                         self.stmove.append(LineGeo(Pe_point2,Ps_point2))
@@ -803,7 +836,9 @@ class PocketMill(object):
             #distances between  map of points to check
             #TODO?: different distances in X (smaller) and Y
             # TODO: Y distance should be calculated
-            self.diff = self.tool_rad*0.9
+            
+            #rad varsus rad*2^(1/2) is 0,707106781
+            self.diff = self.tool_rad*0.7
             
             compType = self.stmove.shape.cut_cor
             
