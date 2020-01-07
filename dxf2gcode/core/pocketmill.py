@@ -92,18 +92,21 @@ class BBArray(object):
         self.overUpRight = Point(self.xStart + 1, self.xStart + 1)
         self.overDownLeft = Point(self.xEnd - 1, self.xEnd - 1)
         self.overDistance = self.overUpRight.distance(self.overDownLeft)
+        
+        self.divY = 1
+        self.divX = 4
             
     def create(self):
         arrayIndex = 0 
-        yi = self.yStart - self.diff
+        yi = self.yStart - self.diff / self.divY
             
         while yi > self.yEnd:
-            xi = self.xStart + self.diff
+            xi = self.xStart + self.diff/self.divX
             while xi < self.xEnd:
                 self.append(InterPoint(xi, yi, arrayIndex, True))
-                xi += self.diff
+                xi += self.diff/self.divX
                 arrayIndex += 1
-            yi -= self.diff
+            yi -= self.diff / self.divY
             
     def checkIfAny(self):
         any = False
@@ -177,7 +180,7 @@ class BBArray(object):
             if BBPoint.y == line.Ps.y and line.Pe.x >= BBPoint.x and BBPoint.x >= line.Ps.x:
                 BBPoint.setMill(False)
                 
-    def findHorizontalWithPoint(self, point, ltr = 1):
+    def findHorizontalWithPoint(self, point):
         #values outside the box
         closestFalseLeft = self.xStart - 1
         closestFalseRight = self.xEnd + 1
@@ -210,7 +213,12 @@ class BBArray(object):
         
         #print("True x'ses: %s and %s" % (closestTrueLeft, closestTrueRight))
         
-        if ltr == True:
+        #if ltr == True:
+        #    return LineGeo(Point(closestTrueLeft, point.y), Point(closestTrueRight, point.y))
+        #else:
+        #    return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
+        
+        if point.distance(Point(closestTrueLeft, point.y)) < point.distance(Point(closestTrueRight, point.y)):
             return LineGeo(Point(closestTrueLeft, point.y), Point(closestTrueRight, point.y))
         else:
             return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
@@ -254,14 +262,60 @@ class BBArray(object):
         bottomY = self.yEnd - 1
         topY    = self.yStart + 1
         currentY = line.Ps.y
+        currentX = line.Pe.x
         
+        #find closest top and bottom Y
         for BBPoint in self.array:
             #We do not check if it is set to mill, since
             # we want to eliminate lines that are too far
+            #if BBPoint.y == currentY and BBPoint.mill == True:
+            #    topY = currentY
+            #    bottomY = currentY
+            #    break
             if topY > BBPoint.y and currentY < BBPoint.y:
                 topY = BBPoint.y
             if bottomY < BBPoint.y and currentY > BBPoint.y:
                 bottomY = BBPoint.y
+                
+        print("topY: %s, bottomY: %s." % (topY, bottomY))
+        
+        if line.Ps.x < line.Pe.x:
+            xRangeStart = line.Ps.x
+            xRangeEnd   = line.Pe.x
+        else:
+            xRangeStart = line.Pe.x
+            xRangeEnd   = line.Ps.x
+        
+        xListTop = []
+        xListBottom = []
+        
+        #create two lists of X'es in "good" range
+        for BBPoint in self.array:
+            if BBPoint.mill == True and xRangeStart <= BBPoint.x <= xRangeEnd:
+                if BBPoint.y == topY:
+                    xListTop.append(BBPoint.x)
+                elif BBPoint.y == bottomY:
+                    xListBottom.append(BBPoint.x)
+                    
+        #if (top or bot_len == 0) and top_len > 0
+        #if (!top or top_len == 0) and bot_len > 0
+        
+        if (preferTop == True or len(xListBottom) == 0) and len(xListTop) > 0:
+            if abs(currentX - min(xListTop)) > abs(currentX - max(xListTop)):
+                #return Line(Point(max(xListTop), topY), Point(min(xListTop), topY))
+                return self.findHorizontalWithPoint(Point(max(xListTop), topY)), False
+            else:
+                return self.findHorizontalWithPoint(Point(min(xListTop), topY)), False
+        elif (preferTop == False or len(xListTop) == 0) and len(xListBottom) > 0:
+            if abs(currentX - min(xListBottom)) > abs(currentX - max(xListBottom)):
+                #return Line(Point(max(xListTop), topY), Point(min(xListTop), topY))
+                return self.findHorizontalWithPoint(Point(max(xListBottom), bottomY)), True
+            else:
+                return self.findHorizontalWithPoint(Point(min(xListBottom), bottomY)), True
+        else:
+            print("preferTop is %s, bottom len: %s, top len: %s." % (preferTop, len(xListBottom), len(xListTop)))
+            return None, preferTop
+                
         
     def findClosestEnd(self, point):
         bottomY    = self.yStart + 1
@@ -302,7 +356,7 @@ class BBArray(object):
         closestPoint = None
         
         for p in points:
-            print("Extreme: %s." % (p))
+            #print("Extreme: %s." % (p))
             if point.distance(p) < distance:
                 distance = point.distance(p)
                 closestPoint = p
@@ -424,7 +478,7 @@ class PocketMill(object):
                 BBPoint.setMill(False)
             
     def createInterList(self):
-        yi = self.bbarray.yStart - self.diff
+        yi = self.bbarray.yStart - self.diff/self.bbarray.divY
         #this while loop will prepare points that crosses the shape.
         # it will be used later to check if point lays inside shape.
         # imagine horizontal line from particular point up to the end
@@ -517,7 +571,7 @@ class PocketMill(object):
                                 #print("Good point! %s" % (p2))
                                 self.inters.append(p2)
                                 
-            yi -= self.diff
+            yi -= self.diff/self.bbarray.divY
             #print("End of finding intersections")
         
     def createLines(self):
@@ -838,7 +892,7 @@ class PocketMill(object):
             # TODO: Y distance should be calculated
             
             #rad varsus rad*2^(1/2) is 0,707106781
-            self.diff = self.tool_rad*0.7
+            self.diff = self.tool_rad*2 * 0.7
             
             compType = self.stmove.shape.cut_cor
             
@@ -892,79 +946,66 @@ class PocketMill(object):
             ### Cool! We have now complete array of points to mill
             ### but we need to convert it into LINES now...
                     
-            #TODO: check what is closer
+            print("Tool rad is %s." % (self.tool_rad))
             
             #currentPoint = Point(self.stmove.start.x, self.stmove.start.y)
             currentPoint = self.stmove.start
                 
             while self.bbarray.checkIfAny():
-                #This while finds start for new zig-zag and starts it.
-                # Start from left-bottom
-                #goToPoint = self.bbarray.findDownLeft()
-                #closestLine = self.bbarray.findClosestLine(currentPoint)
+                #Find start for new zig-zag and go there.
                 closestPoint = self.bbarray.findClosestEnd(currentPoint)
                 closestLine = self.bbarray.findHorizontalWithPoint(closestPoint)
                 print("Closest end line to start is %s." % (closestLine))
                 print("Closest point to start is %s." % (closestPoint))
-            
-                if closestLine.Ps.distance(currentPoint) > closestLine.Pe.distance(currentPoint):
-                    toRight = False
-                    goToPoint = closestLine.Pe
-                else:
-                    toRight = True
-                    goToPoint = closestLine.Ps
+                goToPoint = closestLine.Ps
                 
                 self.stmove.append(LineGeo(currentPoint, goToPoint))
                 currentPoint = goToPoint
+                
+                preferTop = True
                                                 
                 while True:
                     #currentPoint should be one of bbarray.mill = true now
+                    # so we are between Ps and Pe of next line at Y height
                     #Do first line from starting point 
-                    line = self.bbarray.findHorizontalWithPoint(currentPoint, toRight)    #dir
+                    line = self.bbarray.findHorizontalWithPoint(currentPoint)    #dir
                     
-                    if toRight == True:
-                        print("Left to right line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
-                    else:
-                        print("Right to left line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
-                        
-                    if currentPoint.x != line.Ps:
+                    #if toRight == True:
+                    #    print("Left to right line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                    #else:
+                    #    print("Right to left line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                    
+                    #print("Line at Y%8.2f: from X%8.2f to X%8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
+                    
+                    #If we are not at start point, go there
+                    if currentPoint.x != line.Ps.x:
                         self.stmove.append(LineGeo(currentPoint, line.Ps))                        
-                        
-                    #go to right
+                    
                     self.stmove.append(line)
                     self.bbarray.removeLine(line)
-                    
                     currentPoint = line.Pe
                     
-                    if toRight == True:
-                        goToPoint = self.bbarray.findClosestTopLeft(currentPoint)       #dir
-                    else:
-                        goToPoint = self.bbarray.findClosestTopRight(currentPoint)       #dir
+                    #Now we need to check if there is any near line we can go
+                    line, preferTop = self.bbarray.findNextLine(line, preferTop)
                     
-                    
-                    #print("Go from %s to %s." % (currentPoint, goToPoint))
-                    
-                    if goToPoint == None:
-                        #print("NONE?!")
-                        print("Cant find closestTop X%8.2f at Y%8.2f." % (currentPoint.x, currentPoint.y))
+                    if line == None:
+                        print("Done.")
                         break
-                        
-                    #TODO: if left closer than right change direction of zig or zag
-                    #TODO: add variable "direction" and check which side is closer
-                        
-                    #if not sraight over "end-point", go back under this point 
-                    #TODO: check if goToPoint lays over current line
-                    if currentPoint.x != goToPoint.x:
-                        self.stmove.append(LineGeo(currentPoint, Point(goToPoint.x, currentPoint.y)))
-                        currentPoint = Point(goToPoint.x, currentPoint.y)
+                    else:
+                        print("Closest line is %s x %s => %s x %s." % (line.Ps.x, line.Ps.y, line.Pe.x, line.Pe.y))
                     
-                    #go to start point of next line
-                    self.stmove.append(LineGeo(currentPoint, Point(currentPoint.x, goToPoint.y)))
-                    currentPoint = Point(currentPoint.x, goToPoint.y)
+                    #check if we can go straight up, or we need to do some stuff...
+                    if not (line.Ps.x <= currentPoint.x <= line.Pe.x or line.Ps.x >= currentPoint.x >= line.Pe.x):
+                        #we need to do some stuff: go back under next line
+                        goToPoint = Point(line.Ps.x, currentPoint.y)
+                        self.stmove.append(LineGeo(currentPoint, goToPoint))
+                        currentPoint = goToPoint
+                        
+                    #Ok, go straight up, and end on nextLine (somewhere 
+                    # between or on start/end point
+                    goToPoint = Point(currentPoint.x, line.Ps.y)
                     self.stmove.append(LineGeo(currentPoint, goToPoint))
-                    
                     currentPoint = goToPoint
-                    toRight = not toRight
-                    
+                            
                 print("Removed lines.")
                 self.bbarray.print()
