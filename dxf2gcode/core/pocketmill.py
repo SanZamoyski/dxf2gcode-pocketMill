@@ -46,6 +46,7 @@ from dxf2gcode.core.intersect import Intersect
 from dxf2gcode.core.shape import Geos
 from dxf2gcode.core.shape import Shape
 from dxf2gcode.core.shapeoffset import *
+from dxf2gcode.core.rapidmove import RapidMove
 
 import logging
 logger = logging.getLogger('core.pocketmill')
@@ -582,13 +583,13 @@ class PocketMill(object):
         geosNum = len(self.stmove.shape.geos)
         print("Number of geos: %s" % (geosNum))
         
+        realStart = self.stmove.geos[-1].Pe
+        
         #set the proper direction for the tool path
         if self.stmove.shape.cw ==True:
             direction = -1;
         else:
             direction = 1;
-            
-        print("Starting point is: %s" % (self.stmove.start))
         
         if geosNum == 2:
             if self.stmove.shape.geos[0].r == self.stmove.shape.geos[1].r and self.stmove.shape.geos[0].Ps == self.stmove.shape.geos[1].Pe and self.stmove.shape.geos[0].Pe == self.stmove.shape.geos[1].Ps:
@@ -887,9 +888,6 @@ class PocketMill(object):
                         self.stmove.append(LineGeo(st_point,en_point))
             
         else:
-            #distances between  map of points to check
-            #TODO?: different distances in X (smaller) and Y
-            # TODO: Y distance should be calculated
             
             #rad varsus rad*2^(1/2) is 0,707106781
             self.diff = self.tool_rad*2 * 0.7
@@ -948,12 +946,8 @@ class PocketMill(object):
                     
             print("Tool rad is %s." % (self.tool_rad))
             
-            #currentPoint = Point(self.stmove.start.x, self.stmove.start.y)
-            currentPoint = self.stmove.start
-            
-            #TODO: better way to avoid circular dependency
-            from dxf2gcode.core.stmove import RapidPos
-                        
+            currentPoint = realStart
+                                    
             while self.bbarray.checkIfAny():
                 #Find start for new zig-zag and go there.
                 closestPoint = self.bbarray.findClosestEnd(currentPoint)
@@ -965,7 +959,7 @@ class PocketMill(object):
                 #line = LineGeo(currentPoint, goToPoint)
                 
                 #self.stmove.append(line)
-                self.stmove.append(RapidPos(goToPoint))
+                self.stmove.append(RapidMove(goToPoint))
                 currentPoint = goToPoint
                 
                 preferTop = True
@@ -975,11 +969,6 @@ class PocketMill(object):
                     # so we are between Ps and Pe of next line at Y height
                     #Do first line from starting point 
                     line = self.bbarray.findHorizontalWithPoint(currentPoint)    #dir
-                    
-                    #if toRight == True:
-                    #    print("Left to right line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
-                    #else:
-                    #    print("Right to left line at %8.2f: from %8.2f to %8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
                     
                     #print("Line at Y%8.2f: from X%8.2f to X%8.2f." % (line.Ps.y, line.Ps.x, line.Pe.x))
                     
@@ -1016,5 +1005,5 @@ class PocketMill(object):
                 print("Removed lines.")
                 self.bbarray.print()
 
-            #self.stmove.append(LineGeo(currentPoint, self.stmove.end))
-            self.stmove.append(RapidPos(self.stmove.end))
+                #self.stmove.append(LineGeo(currentPoint, self.stmove.end))
+            self.stmove.append(RapidMove(realStart))

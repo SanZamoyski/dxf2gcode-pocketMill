@@ -36,6 +36,7 @@ from dxf2gcode.core.point import Point
 from dxf2gcode.core.linegeo import LineGeo
 from dxf2gcode.core.arcgeo import ArcGeo
 from dxf2gcode.core.holegeo import HoleGeo
+from dxf2gcode.core.rapidmove import RapidMove
 
 import dxf2gcode.globals.constants as c
 from PyQt5 import QtCore
@@ -238,99 +239,7 @@ class Shape(object):
             
         ### drill cut here
         
-        """
-        if PPocket ==True:
-            #Calculate the start and end points for pocket entry and exit for a circular pocket
-            if isinstance(self.geos[0],ArcGeo):  
-                numberofrotations = int((self.geos[0].r - self.parentLayer.tool_diameter)/self.OffsetXY)
-                if ((self.geos[0].r - self.parentLayer.tool_diameter/2)/self.OffsetXY)> numberofrotations :
-                    numberofrotations += 1
-                st_point = Point(self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter),self.geos[0].O.y)
-                en_point = Point(self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter * 2 * numberofrotations),self.geos[0].O.y)
-                if ((en_point.x - self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter)) > self.geos[0].r):
-                    en_point = Point(self.geos[0].O.x + self.geos[0].r - (0.5 * self.parentLayer.tool_diameter)  ,self.geos[0].O.y)
-                logger.debug(self.tr("shape:get_start_end_points_physical:Start Point at: %s" % st_point))
-                logger.debug(self.tr("shape:get_start_end_points_physical:End Point at: %s" % en_point))
-                if start_point is None:
-                    return (st_point, en_point),direction*1.57
-                elif start_point:
-                    return st_point,direction*1.57
-                else:
-                    return en_point,direction*(-1.57)
-            elif isinstance(self.geos[0],LineGeo) and len(self.geos) == 4:
-                #get Rectangle width and height
-                firstgeox = abs(self.geos[0].Ps.x - self.geos[0].Pe.x)
-                firstgeoy = abs(self.geos[0].Ps.y - self.geos[0].Pe.y)
-                secondgeox = abs(self.geos[1].Ps.x - self.geos[1].Pe.x)
-                secondgeoy = abs(self.geos[1].Ps.y - self.geos[1].Pe.y)
-                if firstgeox > secondgeox:
-                    Pocketx = firstgeox
-                    if self.geos[0].Ps.x < self.geos[0].Pe.x:
-                        minx = self.geos[0].Ps.x
-                    else:
-                        minx = self.geos[0].Pe.x
-                else:
-                    Pocketx = secondgeox
-                    if self.geos[1].Ps.x < self.geos[1].Pe.x:
-                        minx = self.geos[1].Ps.x
-                    else:
-                        minx = self.geos[1].Pe.x
-                if firstgeoy > secondgeoy:
-                    Pockety = firstgeoy
-                    if self.geos[0].Ps.y < self.geos[0].Pe.y:
-                        miny = self.geos[0].Ps.y
-                    else:
-                        miny = self.geos[0].Pe.y
-                else:
-                    Pockety = secondgeoy
-                    if self.geos[1].Ps.y < self.geos[1].Pe.y:
-                        miny = self.geos[1].Ps.y
-                    else:
-                        miny = self.geos[1].Pe.y
-                Centerpt = Point(Pocketx/2 + minx, Pockety/2 +miny)
-                # calc number of rotations
-                if Pockety > Pocketx:
-                    numberofrotations = int(((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+1
-                    if (((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)> int(((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+0.5 :
-                        numberofrotations += 1
-                else:
-                    numberofrotations = int(((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+1
-                    if (((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)> int(((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+0.5 :
-                        numberofrotations += 1
-            
-                if Pockety > Pocketx: 
-                    st_point = Point(Centerpt.x +(self.parentLayer.tool_diameter/2 ) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.parentLayer.tool_diameter/2 )) )
-                    if (Centerpt.y - (Pockety-Pocketx)/2 - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= miny):
-                        en_point = Point(Centerpt.x +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY))) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                    
-                elif Pocketx > Pockety:
-                    st_point = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.parentLayer.tool_diameter/2 )) ,Centerpt.y + (self.parentLayer.tool_diameter/2 ) )
-                    if (Centerpt.x - (Pocketx-Pockety)/2 - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= minx):
-                        en_point = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY))) ,Centerpt.y + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                        
-                    
-                elif Pocketx == Pockety:
-                    st_point = Point(Centerpt.x + self.parentLayer.tool_diameter/2 ,Centerpt.y + (self.parentLayer.tool_diameter/2 ) )
-                    if (Centerpt.x - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= minx):
-                        en_point = Point(Centerpt.x + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) ,Centerpt.y + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                    
-                    
-                if start_point is None:
-                    return (st_point, en_point),direction*3.14
-                elif start_point:
-                    if direction == -1:
-                        return st_point,-1.57
-                    else:
-                        return st_point,3.14
-                else:
-                    return en_point,direction*(-1.57)
-        """    
+        #TODO: end point will change
         
         if start_point or self.closed:
             return self.get_start_end_points(start_point, angles)
@@ -362,111 +271,6 @@ class Shape(object):
             direction = -1;
         else:
             direction = 1;
-        
-        """
-        if Drill == True:
-            st_point = Point(self.geos[0].O.x,self.geos[0].O.y)
-            en_point = Point(self.geos[0].O.x,self.geos[0].O.y)    
-            if start_point is None:
-                return (st_point, en_point)
-            elif start_point:
-                return st_point,direction*1.57
-            else:
-                return en_point,direction*(-1.57)
-        
-        if PPocket ==True:
-            #Calculate the start and end points for pocket entry and exit for a circular pocket
-            if isinstance(self.geos[0],ArcGeo):  
-                numberofrotations = int((self.geos[0].r - self.parentLayer.tool_diameter)/self.OffsetXY)
-                if ((self.geos[0].r - self.parentLayer.tool_diameter/2)/self.OffsetXY)> numberofrotations :
-                    numberofrotations += 1
-                st_point = Point(self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter),self.geos[0].O.y)
-                en_point = Point(self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter * 2 * numberofrotations),self.geos[0].O.y)
-                if ((en_point.x - self.geos[0].O.x + (0.5 * self.parentLayer.tool_diameter)) > self.geos[0].r):
-                    en_point = Point(self.geos[0].O.x + self.geos[0].r - (0.5 * self.parentLayer.tool_diameter)  ,self.geos[0].O.y)
-                logger.debug(self.tr("shape:get_start_end_points_physical:Start Point at: %s" % st_point))
-                logger.debug(self.tr("shape:get_start_end_points_physical:End Point at: %s" % en_point))
-                if start_point is None:
-                    return (st_point, en_point)#,1.57
-                elif start_point:
-                    return st_point,direction*1.57
-                else:
-                    return en_point,direction*(-1.57)
-            elif isinstance(self.geos[0],LineGeo) and len(self.geos) == 4:
-                #get Rectangle width and height
-                firstgeox = abs(self.geos[0].Ps.x - self.geos[0].Pe.x)
-                firstgeoy = abs(self.geos[0].Ps.y - self.geos[0].Pe.y)
-                secondgeox = abs(self.geos[1].Ps.x - self.geos[1].Pe.x)
-                secondgeoy = abs(self.geos[1].Ps.y - self.geos[1].Pe.y)
-                if firstgeox > secondgeox:
-                    Pocketx = firstgeox
-                    if self.geos[0].Ps.x < self.geos[0].Pe.x:
-                        minx = self.geos[0].Ps.x
-                    else:
-                        minx = self.geos[0].Pe.x
-                else:
-                    Pocketx = secondgeox
-                    if self.geos[1].Ps.x < self.geos[1].Pe.x:
-                        minx = self.geos[1].Ps.x
-                    else:
-                        minx = self.geos[1].Pe.x
-                if firstgeoy > secondgeoy:
-                    Pockety = firstgeoy
-                    if self.geos[0].Ps.y < self.geos[0].Pe.y:
-                        miny = self.geos[0].Ps.y
-                    else:
-                        miny = self.geos[0].Pe.y
-                else:
-                    Pockety = secondgeoy
-                    if self.geos[1].Ps.y < self.geos[1].Pe.y:
-                        miny = self.geos[1].Ps.y
-                    else:
-                        miny = self.geos[1].Pe.y
-                Centerpt = Point(Pocketx/2 + minx, Pockety/2 +miny)
-                # calc number of rotations
-                if Pockety > Pocketx:
-                    numberofrotations = int(((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+1
-                    if (((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)> int(((Pocketx/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+0.5 :
-                        numberofrotations += 1
-                else:
-                    numberofrotations = int(((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+1
-                    if (((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)> int(((Pockety/2) - self.parentLayer.tool_diameter/2)/self.OffsetXY)+0.5 :
-                        numberofrotations += 1
-            
-                if Pockety > Pocketx: 
-                    st_point = Point(Centerpt.x +(self.parentLayer.tool_diameter/2 ) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.parentLayer.tool_diameter/2 )) )
-                    if (Centerpt.y - (Pockety-Pocketx)/2 - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= miny):
-                        en_point = Point(Centerpt.x +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) ,Centerpt.y + ((Pockety-Pocketx)/2 +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY))) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                    
-                elif Pocketx > Pockety:
-                    st_point = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.parentLayer.tool_diameter/2 )) ,Centerpt.y + (self.parentLayer.tool_diameter/2 ) )
-                    if (Centerpt.x - (Pocketx-Pockety)/2 - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= minx):
-                        en_point = Point(Centerpt.x + ((Pocketx-Pockety)/2 +(self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY))) ,Centerpt.y + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                        
-                    
-                elif Pocketx == Pockety:
-                    st_point = Point(Centerpt.x + self.parentLayer.tool_diameter/2 ,Centerpt.y + (self.parentLayer.tool_diameter/2 ) )
-                    if (Centerpt.x - (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) - self.parentLayer.tool_diameter/2 >= minx):
-                        en_point = Point(Centerpt.x + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) ,Centerpt.y + (self.parentLayer.tool_diameter/2 + (numberofrotations*self.OffsetXY)) )
-                    else:
-                        en_point = Point(Centerpt.x + Pocketx/2 - self.parentLayer.tool_diameter/2 ,Centerpt.y + Pockety/2 - self.parentLayer.tool_diameter/2 )
-                    
-                    
-                if start_point is None:
-                    return (st_point, en_point)#,3.14
-                elif start_point:
-                    if direction == -1:
-                        return st_point,-1.57
-                    else:
-                        return st_point,3.14
-                else:
-                    return en_point,direction*(-1.57)
-        
-        """
         
         if start_point is None:
             return (self.geos.abs_el(0).get_start_end_points(True, angles),
@@ -525,9 +329,7 @@ class Shape(object):
         # Used to remove zero length geos. If not, arcs can become a full
         # circle
         
-        #TODO: better way to avoid circular dependency
-        from dxf2gcode.core.stmove import RapidPos
-        if isinstance(geo, RapidPos):
+        if isinstance(geo, RapidMove):
             return geo.Write_GCode(PostPro)
         
         post_dec = PostPro.vars.Number_Format["post_decimals"]
@@ -598,16 +400,6 @@ class Shape(object):
 
         mom_depth = initial_mill_depth
 
-        # Move the tool to the start.
-        #if self.Pocket == True:
-        #    mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0].Ps)
-        #    exstr += mylinegeo.Write_GCode(PostPro)
-        #elif self.Drill == True:
-        #    mylinegeo = LineGeo(Point(0,0),self.stmove.geos[0])
-        #    exstr += mylinegeo.Write_GCode(PostPro)
-        #else:
-        #    exstr += self.stmove.geos.abs_el(0).Write_GCode(PostPro)
-
         exstr += self.stmove.geos.abs_el(0).Write_GCode(PostPro)
 
         # Add string to be added before the shape will be cut.
@@ -635,29 +427,13 @@ class Shape(object):
 
             exstr += self.stmove.geos.abs_el(1).Write_GCode(PostPro)
             exstr += self.stmove.geos.abs_el(2).Write_GCode(PostPro)
-
-        # Write the geometries for the first cut
-        #if self.Pocket == True:
-        #    for geo in self.stmove.geos.abs_iter():
-        #        exstr += self.Write_GCode_for_geo(geo, PostPro)
-        #    mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
-        #    exstr += mylinegeo.Write_GCode(PostPro)
-        #elif self.Drill == True:
-        #    #do nothing
-        #    logger.debug(self.tr("Debug: Gcode Drill"))
-        #    myholegeo = HoleGeo(self.geos[0].O)
-        #    myholegeo.z_pos = self.axis3_mill_depth
-        #    myholegeo.Q = self.axis3_mill_depth
-        #    myholegeo.R = self.parentLayer.axis3_safe_margin
-        #    myholegeo.DrillType = self.DrillType
-        #    myholegeo.DFeed = self.f_g1_depth
-        #    exstr += myholegeo.Write_GCode(PostPro) 
-        #else:
-        #    for geo in new_geos.abs_iter():
-        #        exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         for geo in new_geos.abs_iter():
-            exstr += self.Write_GCode_for_geo(geo, PostPro)
+            if isinstance(geo, RapidMove):
+                geo.setZMove(f_g1_depth, f_g1_plane, workpiece_top_Z + abs(safe_margin), mom_depth, safe_retract_depth)
+                exstr += geo.Write_GCode(PostPro)
+            else:
+                exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         # Turning the cutter radius compensation
         if self.cut_cor != 40 and PostPro.vars.General["cancel_cc_for_depth"]:
@@ -671,6 +447,12 @@ class Shape(object):
             mom_depth = mom_depth - abs(max_slice)
             if mom_depth < depth:
                 mom_depth = depth
+                
+            #If this is last slice, remove last element
+            # (no need to return to start point)
+            if mom_depth == depth and self.Pocket == True:
+                popped = new_geos.pop()
+                #print("Pop from geos %s." % (popped))
 
             # Erneutes Eintauchen
             exstr += PostPro.chg_feed_rate(f_g1_depth)
@@ -695,20 +477,16 @@ class Shape(object):
             # If cutter correction is enabled
             if self.cut_cor != 40 and PostPro.vars.General["cancel_cc_for_depth"]:
                 exstr += PostPro.set_cut_cor(self.cut_cor)
-
-            #for geo in new_geos.abs_iter():
-            #    exstr += self.Write_GCode_for_geo(geo, PostPro)
-            #if self.Pocket == True:
-            #    for geo in self.stmove.geos.abs_iter():
-            #        exstr += self.Write_GCode_for_geo(geo, PostPro)
-            #else:
-            #    for geo in new_geos.abs_iter():
-            #        exstr += self.Write_GCode_for_geo(geo, PostPro)
             
             for geo in new_geos.abs_iter():
-                exstr += self.Write_GCode_for_geo(geo, PostPro)
+                if isinstance(geo, RapidMove):
+                    geo.setZMove(f_g1_depth, f_g1_plane, workpiece_top_Z + abs(safe_margin), mom_depth, safe_retract_depth)
+                    exstr += geo.Write_GCode(PostPro)
+                else:
+                    exstr += self.Write_GCode_for_geo(geo, PostPro)
             
             # Move the tool to the start.
+            #TODO: check is this needed
             if self.Pocket == True and mom_depth > depth:
                 mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
                 exstr += mylinegeo.Write_GCode(PostPro)
@@ -879,7 +657,6 @@ class Geos(list):
     def abs_iter(self):
         for geo in list.__iter__(self):
             yield geo.abs_geo if geo.abs_geo else geo
-
 
     def abs_el(self, element):
         return self[element].abs_geo if self[element].abs_geo else self[element]

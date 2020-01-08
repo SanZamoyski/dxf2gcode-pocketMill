@@ -162,9 +162,6 @@ class StMove(object):
             pocket = PocketMill(self)
             pocket.createLines()
             
-            #dummy last line
-            #self.append(LineGeo(Point(10.1, 11.3), Point(20.1, 21.3)))
-
     def make_swivelknife_move(self):
         """
         Set these variables for your tool and material
