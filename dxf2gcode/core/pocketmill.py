@@ -950,7 +950,10 @@ class PocketMill(object):
             
             #currentPoint = Point(self.stmove.start.x, self.stmove.start.y)
             currentPoint = self.stmove.start
-                
+            
+            #TODO: better way to avoid circular dependency
+            from dxf2gcode.core.stmove import RapidPos
+                        
             while self.bbarray.checkIfAny():
                 #Find start for new zig-zag and go there.
                 closestPoint = self.bbarray.findClosestEnd(currentPoint)
@@ -959,7 +962,10 @@ class PocketMill(object):
                 print("Closest point to start is %s." % (closestPoint))
                 goToPoint = closestLine.Ps
                 
-                self.stmove.append(LineGeo(currentPoint, goToPoint))
+                #line = LineGeo(currentPoint, goToPoint)
+                
+                #self.stmove.append(line)
+                self.stmove.append(RapidPos(goToPoint))
                 currentPoint = goToPoint
                 
                 preferTop = True
@@ -1009,3 +1015,6 @@ class PocketMill(object):
                             
                 print("Removed lines.")
                 self.bbarray.print()
+
+            #self.stmove.append(LineGeo(currentPoint, self.stmove.end))
+            self.stmove.append(RapidPos(self.stmove.end))

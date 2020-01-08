@@ -221,7 +221,7 @@ class Shape(object):
         elif self.cut_cor == 42:
             self.cut_cor = 41
 
-    def append(self, geo):
+    def append(self, geo, zUp = False):
         geo.make_abs_geo(self.parentEntity)
         self.geos.append(geo)
 
@@ -524,6 +524,12 @@ class Shape(object):
     def Write_GCode_for_geo(self, geo, PostPro):
         # Used to remove zero length geos. If not, arcs can become a full
         # circle
+        
+        #TODO: better way to avoid circular dependency
+        from dxf2gcode.core.stmove import RapidPos
+        if isinstance(geo, RapidPos):
+            return geo.Write_GCode(PostPro)
+        
         post_dec = PostPro.vars.Number_Format["post_decimals"]
         if isinstance(geo, HoleGeo) or\
            round(geo.Ps.x, post_dec) != round(geo.Pe.x, post_dec) or\
@@ -556,6 +562,7 @@ class Shape(object):
             return ""
 
         new_geos = PostPro.breaks.getNewGeos(new_geos)
+        
         # initialisation of the string
         exstr = ""
 
@@ -651,6 +658,9 @@ class Shape(object):
         #        exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         for geo in new_geos.abs_iter():
+            #print("GCode: %s (%s)" % (self.Write_GCode_for_geo(geo, PostPro)))
+            #if geo.mill == False:
+            #    print("Do not mill!")
             exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         # Turning the cutter radius compensation
