@@ -221,7 +221,7 @@ class Shape(object):
         elif self.cut_cor == 42:
             self.cut_cor = 41
 
-    def append(self, geo, zUp = False):
+    def append(self, geo):
         geo.make_abs_geo(self.parentEntity)
         self.geos.append(geo)
 
@@ -562,7 +562,6 @@ class Shape(object):
             return ""
 
         new_geos = PostPro.breaks.getNewGeos(new_geos)
-        
         # initialisation of the string
         exstr = ""
 
@@ -658,9 +657,6 @@ class Shape(object):
         #        exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         for geo in new_geos.abs_iter():
-            #print("GCode: %s (%s)" % (self.Write_GCode_for_geo(geo, PostPro)))
-            #if geo.mill == False:
-            #    print("Do not mill!")
             exstr += self.Write_GCode_for_geo(geo, PostPro)
         
         # Turning the cutter radius compensation
