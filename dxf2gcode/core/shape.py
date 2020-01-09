@@ -239,7 +239,7 @@ class Shape(object):
             
         ### drill cut here
         
-        #TODO: end point will change
+        #TODO: end point will change to zig-zag's end
         
         if start_point or self.closed:
             return self.get_start_end_points(start_point, angles)
@@ -484,13 +484,7 @@ class Shape(object):
                     exstr += geo.Write_GCode(PostPro)
                 else:
                     exstr += self.Write_GCode_for_geo(geo, PostPro)
-            
-            # Move the tool to the start.
-            #TODO: check is this needed
-            if self.Pocket == True and mom_depth > depth:
-                mylinegeo = LineGeo(self.stmove.geos[-1].Pe,self.stmove.geos[0].Ps)
-                exstr += mylinegeo.Write_GCode(PostPro)
-                
+                            
             # Turning off the cutter radius compensation if needed
             if self.cut_cor != 40 and PostPro.vars.General["cancel_cc_for_depth"]:
                 exstr += PostPro.deactivate_cut_cor()

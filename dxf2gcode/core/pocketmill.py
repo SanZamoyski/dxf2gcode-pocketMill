@@ -8,7 +8,7 @@
 #    Jean-Paul Schouwstra
 #   
 #   Copyright (C) 2019-2020 
-#    San Zamoyski for this file
+#    San Zamoyski
 #
 #   This file is part of DXF2GCODE.
 #
@@ -30,7 +30,7 @@
 from __future__ import absolute_import
 from __future__ import division
 
-from math import sin, cos, pi, sqrt
+from math import sin, cos, pi, sqrt, ceil
 from copy import deepcopy
 
 #for dumps
@@ -122,7 +122,8 @@ class BBArray(object):
     def append(self, newPoint):
         self.array.append(newPoint)
 
-    #TODO: create one function that returns four extreme points and
+    """
+    #DONE: create one function that returns four extreme points and
     # than (in main) check what is closest to "current" and then decide
     # where to start.
     def findTopRight(self):
@@ -153,6 +154,7 @@ class BBArray(object):
                 downLeft = point
                 
         return downLeft
+    """
     
     def print(self):
         #This will stop work if array will be not in order
@@ -224,8 +226,8 @@ class BBArray(object):
         else:
             return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
         
-    
-    #TODO: create function findClosestTopLine which returns two points
+    """
+    #DONE: create function findClosestTopLine which returns two points
     # then check what is closer (in main function) and decide about direction
     # etc.
     def findClosestLine(self, point):
@@ -258,7 +260,8 @@ class BBArray(object):
         if new is True:
             #find line with this point
             return self.findHorizontalWithPoint(newPoint)
-        
+    """
+    
     def findNextLine(self, line, preferTop):
         bottomY = self.yEnd - 1
         topY    = self.yStart + 1
@@ -364,6 +367,7 @@ class BBArray(object):
                 
         return closestPoint        
     
+    """
     def findClosestTopLeft(self, point):
         #always outside BBox
         newy = self.yStart + 1 
@@ -430,7 +434,8 @@ class BBArray(object):
             return None
                 
         return Point(newx, newy)
-            
+    """
+    
 class PocketMill(object):
     def __init__(self, stmove=None):
         self.stmove = stmove
@@ -625,7 +630,54 @@ class PocketMill(object):
             #TODO:
             #   ____
             #  (____)
-        elif circle == 1:            
+        elif circle == 1:
+            stepOverlay = 0.9
+            realStart = self.stmove.geos[-1].Pe
+            cutComp = self.stmove.shape.cut_cor
+            
+            #this is radius of whole shape
+            if cutComp == 40: #no compensation
+                millRad = self.stmove.shape.geos[0].r - self.tool_rad
+            elif cutComp == 41: #outside
+                millRad = self.stmove.shape.geos[0].r
+            elif cutComp == 42: #comp inside
+                millRad = self.stmove.shape.geos[0].r - 2 * self.tool_rad
+            
+            rotNum = (millRad - 2 * self.tool_rad * stepOverlay)/(self.tool_rad * (1 + stepOverlay))
+            rotNum = ceil(rotNum)
+                        
+            stepOverlay = (millRad - rotNum * self.tool_rad)/(self.tool_rad * 2 * rotNum)
+            currentRad = millRad - self.tool_rad * stepOverlay
+            
+            circleOff = self.tool_rad * (1 + stepOverlay)
+            
+            centerPoint = self.stmove.shape.geos[0].O
+            print("Shape radius: %s, circle rotNum: %s, stepOverlay: %s." % (self.stmove.shape.geos[0].r, rotNum + 1, stepOverlay))
+            
+            currentPoint = realStart
+            rLimit = self.tool_rad * (1 - stepOverlay)
+            
+            while currentRad > rLimit:
+                
+                print("CurrentRad: %s, limit %s." % (currentRad, rLimit))
+                
+                goToPoint = Point(centerPoint.x + currentRad, centerPoint.y)
+                
+                if centerPoint.y == currentPoint.y and centerPoint.x < currentPoint.x:
+                    self.stmove.append(LineGeo(currentPoint, goToPoint))
+                else:
+                    self.stmove.append(RapidMove(goToPoint))
+                    
+                currentPoint = goToPoint
+                
+                self.stmove.append(ArcGeo(Ps = currentPoint, Pe = currentPoint, O = centerPoint, r = currentRad, direction = direction))
+                
+                currentRad -= circleOff
+                
+            print("APPEND GO BACK")
+            self.stmove.append(RapidMove(realStart))
+            
+            """
             numberofrotations = int((self.stmove.shape.geos[0].r - self.tool_rad)/circleOff)-1
             if ((self.stmove.shape.geos[0].r - self.tool_rad)/circleOff)> numberofrotations :
                 numberofrotations += 1
@@ -655,6 +707,7 @@ class PocketMill(object):
                         en_point = Point(self.stmove.shape.geos[0].O.x + self.stmove.shape.geos[0].r - self.tool_rad,Ps_point.y)
                         
                     self.stmove.append(LineGeo(st_point,en_point))
+            """
                         
         elif horizontalRectangle == 1:
             #TODO: if 4 lines, and they are parallel
