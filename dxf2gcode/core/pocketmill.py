@@ -603,7 +603,6 @@ class PocketMill(object):
             # and build array of points calculated
             # from self.tool_rad and first point
             # for CW and CCW
-            
             pointLeftBottom = Point(centerPoint.x - xOff + self.tool_rad * (1 + stepOverlayX),
                                 centerPoint.y - yOff + self.tool_rad * (1 + stepOverlayY))
             
@@ -619,10 +618,7 @@ class PocketMill(object):
             stepX = (1 + stepOverlayX) * self.tool_rad
             stepY = (1 + stepOverlayY) * self.tool_rad 
             
-            #TODO: swiching direction breaks milling 
-            if realStart.x < centerPoint.x and realStart.y < centerPoint.y:
-                #start is left-bottom corner
-                print("start is left-bottom corner")
+            if startLeft == 1 and startTop == 0:
                 pointList = [
                     [pointLeftBottom, Point(stepX, 0)],
                     [pointLeftTop, Point(stepX, -stepY)],
@@ -631,8 +627,7 @@ class PocketMill(object):
                     ]
                 addAfter = Point(0, stepY)
                 
-            elif realStart.x > centerPoint.x and realStart.y < centerPoint.y:
-                print("start is right-bottom corner")
+            elif startLeft == 0 and startTop == 0:
                 pointList = [
                     [pointRightBottom, Point(0, stepY)],
                     [pointLeftBottom, Point(stepX, stepY)],
@@ -641,8 +636,7 @@ class PocketMill(object):
                     ]
                 addAfter = Point(-stepX, 0)
                 
-            elif realStart.x < centerPoint.x and realStart.y > centerPoint.y:
-                print("start is left-top corner")
+            elif startLeft == 1 and startTop == 1:
                 pointList = [
                     [pointLeftTop, Point(0, -stepY)],
                     [pointRightTop, Point(-stepX, -stepY)],
@@ -651,8 +645,7 @@ class PocketMill(object):
                     ]
                 addAfter = Point(stepX, 0)
                 
-            elif realStart.x > centerPoint.x and realStart.y > centerPoint.y:
-                print("start is right-top corner")
+            elif startLeft == 0 and startTop == 1:
                 pointList = [
                     [pointRightTop, Point(-stepX, 0)],
                     [pointRightBottom, Point(-stepX, stepY)],
@@ -667,6 +660,10 @@ class PocketMill(object):
                 tmp = pointList[1]
                 pointList[1] = pointList[3]
                 pointList[3] = tmp
+                #correct addAfter
+                tmp1 = pointList[0][1]
+                pointList[0][1] = addAfter
+                addAfter = tmp1
                 
             #TODO: convert it to move based on horizontal and vertical lines only
             # or check if it is needed.
