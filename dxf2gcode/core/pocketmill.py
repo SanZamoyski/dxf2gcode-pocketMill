@@ -619,6 +619,7 @@ class PocketMill(object):
             stepX = (1 + stepOverlayX) * self.tool_rad
             stepY = (1 + stepOverlayY) * self.tool_rad 
             
+            #TODO: swiching direction breaks milling 
             if realStart.x < centerPoint.x and realStart.y < centerPoint.y:
                 #start is left-bottom corner
                 print("start is left-bottom corner")
