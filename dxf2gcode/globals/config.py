@@ -39,7 +39,7 @@ from dxf2gcode.globals.d2gexceptions import *
 from dxf2gcode.gui.configwindow import *
 
 import dxf2gcode.globals.constants as c
-from dns.rdataclass import NONE
+#TODO: check if can be removed: from dns.rdataclass import NONE
 
 from PyQt5 import QtCore
 
@@ -152,9 +152,6 @@ CONFIG_SPEC = str('''
     f_g1_plane = float(default = 400)
     f_g1_depth = float(default = 150)
     
-    [Pocketing]
-    OffsetXY = float(default = 0.25)
-
     [General]
     # Enable 3D representation of the piece (requires PyQt5 and OpenGL)
     mode3d = boolean(default = False)
@@ -527,11 +524,6 @@ class MyConfig(object):
                 ('f_g1_plane', CfgDoubleSpinBox(self.tr('First and second axis (2D plane):'), speed_unit)),
                 ('f_g1_depth', CfgDoubleSpinBox(self.tr('Third axis:'), speed_unit))
             ])),
-            ('Pocketing', OrderedDict([
-                ('__section_title__', self.tr("Machine config")),
-                ('__subtitle__', CfgSubtitle(self.tr("Mill Pocket"))),
-                ('OffsetXY', CfgDoubleSpinBox(self.tr('OffestXY (Stepover):'), coordinate_unit,0.001,NONE,3))
-            ])),
             ('Cutter_Compensation', OrderedDict([
                 ('__section_title__', self.tr("Output settings")),
                 ('__subtitle__', CfgSubtitle(self.tr("Cutter compensation"))),
@@ -570,7 +562,6 @@ class MyConfig(object):
                 ('safe_margin_identifiers', CfgListEdit(self.tr('Safety margin:'), ',')),
                 ('f_g1_plane_identifiers', CfgListEdit(self.tr('G1 feed rate for first and second axis (2D plane):'), ',')),
                 ('f_g1_depth_identifiers', CfgListEdit(self.tr('G1 feed rate for third axis:'), ',')),
-                ('OffsetXY_identifiers', CfgListEdit(self.tr('Offset XY (Stepover):'), ',')),
                 ('tool_nr_identifiers', CfgListEdit(self.tr('Tool number:'), ',')),
                 ('tool_diameter_identifiers', CfgListEdit(self.tr('Tool diameter:'), ',')),
                 ('spindle_speed_identifiers', CfgListEdit(self.tr('Spindle speed:'), ',')),
