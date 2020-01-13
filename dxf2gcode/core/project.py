@@ -111,7 +111,6 @@ class Project(object):
                                    'mill_depth': shape.axis3_mill_depth,
                                    'f_g1_plane': shape.f_g1_plane,
                                    'f_g1_depth': shape.f_g1_depth,
-                                   'OffsetXY': shape.OffsetXY,
                                    'start_x': stpoint.x,
                                    'start_y': stpoint.y})
             layers.append({'name': layer.name,
@@ -212,8 +211,7 @@ d2g.layers = ''' + str(layers)
                         shape.axis3_mill_depth = parent_shape['mill_depth']
                         shape.f_g1_plane = parent_shape['f_g1_plane']
                         shape.f_g1_depth = parent_shape['f_g1_depth']
-                        shape.OffsetXY = parent_shape['OffsetXY']
-
+                        
                         if parent_shape['cw'] != shape.cw:
                             shape.reverse()
                         shape.setNearestStPoint(Point(parent_shape['start_x'], parent_shape['start_y']))
