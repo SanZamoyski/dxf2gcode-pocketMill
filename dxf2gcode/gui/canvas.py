@@ -28,8 +28,9 @@ from __future__ import absolute_import
 import logging
 
 import dxf2gcode.globals.globals as g
-from dxf2gcode.core.linegeo import LineGeo
-from dxf2gcode.core.arcgeo import ArcGeo
+#TODO: check if can be removed:
+#from dxf2gcode.core.linegeo import LineGeo
+#from dxf2gcode.core.arcgeo import ArcGeo
 
 import dxf2gcode.globals.constants as c
 from PyQt5.QtWidgets import QGraphicsView, QMenu

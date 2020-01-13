@@ -38,7 +38,8 @@ from dxf2gcode.core.point import Point
 from dxf2gcode.core.shape import Shape
 from dxf2gcode.core.boundingbox import BoundingBox
 from dxf2gcode.core.stmove import StMove
-from dxf2gcode.core.arcgeo import ArcGeo
+#TODO: check if can be removed:
+#from dxf2gcode.core.arcgeo import ArcGeo
 from dxf2gcode.gui.wpzero import WpZero
 from dxf2gcode.gui.arrow import Arrow
 from dxf2gcode.gui.routetext import RouteText
