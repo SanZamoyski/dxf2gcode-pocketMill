@@ -53,6 +53,8 @@ logger = logging.getLogger('core.pocketmill')
 
 import time
 
+#TODO: remove everywhere: self.stmove.shape.OffsetXY
+
 class InterPoint(object):
     def __init__(self, x=0, y=0, i=0, mill = False):
         self.x = x
@@ -456,10 +458,6 @@ class PocketMill(object):
         
         if geosNum == 2:
             if self.stmove.shape.geos[0].r == self.stmove.shape.geos[1].r and self.stmove.shape.geos[0].Ps == self.stmove.shape.geos[1].Pe and self.stmove.shape.geos[0].Pe == self.stmove.shape.geos[1].Ps:
-                    #print("Circle")
-                    #TODO: remove?
-                    #circleOff = 0.9 * self.tool_rad #self.stmove.shape.OffsetXY
-                    #direction = 1
                     circle = 1
                     
         if geosNum == 4:
@@ -719,7 +717,8 @@ class PocketMill(object):
             print("BBBounds: X%s to X%s, Y%s to Y%s" % (self.bbarray.xStart, self.bbarray.xEnd, self.bbarray.yStart, self.bbarray.yEnd))
             
             #how close can be point to shape
-            self.dist = self.tool_rad + self.stmove.shape.OffsetXY
+            #TODO: tweak?
+            self.dist = self.tool_rad/0.7
             
             ### fill array with TRUEs
             self.bbarray.create()
