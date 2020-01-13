@@ -729,7 +729,6 @@ class MainWindow(QMainWindow):
             self.ui.unitLabel_7.setText(distance)
             self.ui.unitLabel_8.setText(speed)
             self.ui.unitLabel_9.setText(speed)
-            self.ui.unitLabel_15.setText(distance)
 
         if g.config.metric != metric:
             for layerContent in self.layerContents:
