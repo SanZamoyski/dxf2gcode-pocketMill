@@ -25,3 +25,6 @@ dxf2gcode-pocketMill-Beta$ grep -Hrn '#TODO:' ./
 ./dxf2gcode/core/rapidmove.py:96:               #TODO: going Z-up can be done as full speed?
 ./dxf2gcode/globals/config.py:42:               #TODO: check if can be removed: from dns.rdataclass import NONE
 ```
+
+
+Please donate: https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=XS8G3MZ896XNQ&item_name=pocket+milling&currency_code=EUR&source=url
