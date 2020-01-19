@@ -788,6 +788,10 @@ returned error code: {1}</source>
         <source>&amp;Inches</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Offset XY</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MessageBox</name>
@@ -1025,7 +1029,7 @@ You have to delete (or carefully edit) the configuration file &quot;{2}&quot; to
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise). This also disables pocket milling.</source>
+        <source>Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1114,6 +1118,18 @@ You have to delete (or carefully edit) the configuration file &quot;{2}&quot; to
     </message>
     <message>
         <source>Drag Knife options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mill Pocket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OffestXY (Stepover):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Offset XY (Stepover):</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1603,6 +1619,18 @@ Die Länge muss größer der Toleranz sein.
     </message>
     <message>
         <source>Shoelace method cannot (directly) be applied to this shape</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>shape:get_start_end_points_physical:Start Point at: %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>shape:get_start_end_points_physical:End Point at: %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Debug: Gcode Drill</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -956,6 +956,10 @@ returned error code: {1}</source>
         <source>&amp;Inches</source>
         <translation>&amp;Дюймы</translation>
     </message>
+    <message>
+        <source>Offset XY</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>MessageBox</name>
@@ -1195,7 +1199,7 @@ You have to delete (or carefully edit) the configuration file &quot;{2}&quot; to
         <translation>Экспорт G-кода на стандартный вывод (вместо файла)</translation>
     </message>
     <message>
-        <source>Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise). This also disables pocket milling.</source>
+        <source>Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise)</source>
         <translation>Компенсацию инструмента делает станок (выберите только если машина поддерживает команды G41 и G42)</translation>
     </message>
     <message>
@@ -1285,6 +1289,18 @@ You have to delete (or carefully edit) the configuration file &quot;{2}&quot; to
     <message>
         <source>Drag Knife options</source>
         <translation>Настройки флюгерного ножа</translation>
+    </message>
+    <message>
+        <source>Mill Pocket</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OffestXY (Stepover):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Offset XY (Stepover):</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1806,6 +1822,18 @@ Skipped Geometries</source>
     <message>
         <source>WARNING: initial mill depth (%i) is lower than end mill depth (%i). Using end mill depth as final depth.</source>
         <translation>ВНИМАНИЕ: начальная глубина фрезерования (%i) меньше чем конечная (%i). Будет использоватся конечная глубина как финальная.</translation>
+    </message>
+    <message>
+        <source>shape:get_start_end_points_physical:Start Point at: %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>shape:get_start_end_points_physical:End Point at: %s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Debug: Gcode Drill</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
