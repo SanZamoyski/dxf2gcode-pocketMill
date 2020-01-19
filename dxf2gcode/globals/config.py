@@ -527,7 +527,7 @@ class MyConfig(object):
             ('Cutter_Compensation', OrderedDict([
                 ('__section_title__', self.tr("Output settings")),
                 ('__subtitle__', CfgSubtitle(self.tr("Cutter compensation"))),
-                ('done_by_machine', CfgCheckBox(self.tr('Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise)')))
+                ('done_by_machine', CfgCheckBox(self.tr('Cutter compensation is done by machine (check box if machine reconizes G41 and G42 commands / uncheck otherwise. This also disables pocket milling.)')))
             ])),
             ('Drag_Knife_Options', OrderedDict([
                 ('__section_title__', self.tr("Output settings")),
