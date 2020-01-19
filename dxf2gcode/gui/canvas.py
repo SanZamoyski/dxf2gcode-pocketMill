@@ -139,7 +139,7 @@ class MyDropDownMenu(QMenu):
 
         self.addSeparator()
         
-        #enable pocket mill only for closed shapes
+        #enable pocket mill only if all selected shapes are closed
         allClosed = True
         
         for item in self.selectedItems:
@@ -147,7 +147,9 @@ class MyDropDownMenu(QMenu):
                 allClosed == False
                 break
             
-        if allClosed == True:            
+        #if all are closed and compensation is NOT done by machine,
+        # since I do not know how this should work... /SZ
+        if allClosed == True and not g.config.vars.Cutter_Compensation["done_by_machine"]:            
             self.PocketAction = self.addAction(self.tr("Pocket Mill"))
             self.PocketAction.setCheckable(True)
             if g.config.machine_type == 'drag_knife':
