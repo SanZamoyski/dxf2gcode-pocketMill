@@ -46,7 +46,7 @@ from dxf2gcode.core.intersect import Intersect
 from dxf2gcode.core.shape import Geos
 from dxf2gcode.core.shape import Shape
 from dxf2gcode.core.shapeoffset import *
-from dxf2gcode.core.rapidmove import RapidMove
+from dxf2gcode.core.pocketmove import PocketMove
 
 import logging
 logger = logging.getLogger('core.pocketmill')
@@ -516,7 +516,7 @@ class PocketMill(object):
                 if centerPoint.y == currentPoint.y and centerPoint.x < currentPoint.x:
                     self.stmove.append(LineGeo(currentPoint, goToPoint))
                 else:
-                    self.stmove.append(RapidMove(goToPoint))
+                    self.stmove.append(PocketMove(currentPoint, goToPoint))
                     
                 currentPoint = goToPoint
                 
@@ -524,7 +524,7 @@ class PocketMill(object):
                 
                 currentRad -= circleOff
                 
-            self.stmove.append(RapidMove(realStart))
+            self.stmove.append(PocketMove(currentPoint, realStart))
                         
         elif horizontalRectangle == 1:
             #rad varsus rad*2^(1/2) is 0,707106781
@@ -681,11 +681,12 @@ class PocketMill(object):
                 self.stmove.append(LineGeo(pointList[3][0], pointList[0][0]))
                 pointList[3][0] += pointList[3][1]
                 
+                currentPoint = pointList[0][0]
                 i += 1
                 pointList[0][0] += addAfter
                 
             #go back to start point
-            self.stmove.append(RapidMove(realStart))
+            self.stmove.append(PocketMove(currentPoint, realStart))
             
             #done!
             
@@ -767,7 +768,7 @@ class PocketMill(object):
                 #line = LineGeo(currentPoint, goToPoint)
                 
                 #self.stmove.append(line)
-                self.stmove.append(RapidMove(goToPoint))
+                self.stmove.append(PocketMove(currentPoint, goToPoint))
                 currentPoint = goToPoint
                 
                 preferTop = True
@@ -814,4 +815,4 @@ class PocketMill(object):
                 self.bbarray.print()
 
                 #self.stmove.append(LineGeo(currentPoint, self.stmove.end))
-            self.stmove.append(RapidMove(realStart))
+            self.stmove.append(PocketMove(currentPoint, realStart))

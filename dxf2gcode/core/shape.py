@@ -7,6 +7,9 @@
 #    Vinzenz Schulz
 #    Jean-Paul Schouwstra
 #
+#   Copyright (C) 20019-2020
+#    San Zamoyski (PocketMill parts)
+#
 #   This file is part of DXF2GCODE.
 #
 #   DXF2GCODE is free software: you can redistribute it and/or modify
@@ -36,7 +39,7 @@ from dxf2gcode.core.point import Point
 from dxf2gcode.core.linegeo import LineGeo
 from dxf2gcode.core.arcgeo import ArcGeo
 from dxf2gcode.core.holegeo import HoleGeo
-from dxf2gcode.core.rapidmove import RapidMove
+from dxf2gcode.core.pocketmove import PocketMove
 
 import dxf2gcode.globals.constants as c
 from PyQt5 import QtCore
@@ -328,7 +331,7 @@ class Shape(object):
         # Used to remove zero length geos. If not, arcs can become a full
         # circle
         
-        if isinstance(geo, RapidMove):
+        if isinstance(geo, PocketMove):
             return geo.Write_GCode(PostPro)
         
         post_dec = PostPro.vars.Number_Format["post_decimals"]
@@ -428,7 +431,7 @@ class Shape(object):
             exstr += self.stmove.geos.abs_el(2).Write_GCode(PostPro)
         
         for geo in new_geos.abs_iter():
-            if isinstance(geo, RapidMove):
+            if isinstance(geo, PocketMove):
                 geo.setZMove(f_g1_depth, f_g1_plane, workpiece_top_Z + abs(safe_margin), mom_depth, safe_retract_depth)
                 exstr += geo.Write_GCode(PostPro)
             else:
@@ -477,7 +480,7 @@ class Shape(object):
                 exstr += PostPro.set_cut_cor(self.cut_cor)
             
             for geo in new_geos.abs_iter():
-                if isinstance(geo, RapidMove):
+                if isinstance(geo, PocketMove):
                     geo.setZMove(f_g1_depth, f_g1_plane, workpiece_top_Z + abs(safe_margin), mom_depth, safe_retract_depth)
                     exstr += geo.Write_GCode(PostPro)
                 else:
