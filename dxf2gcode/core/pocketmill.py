@@ -33,10 +33,6 @@ from __future__ import division
 from math import sin, cos, pi, sqrt, ceil
 from copy import deepcopy
 
-#for dumps
-#from inspect import getmembers
-#from pprint import pprint
-
 import dxf2gcode.globals.globals as g
 
 from dxf2gcode.core.linegeo import LineGeo
@@ -52,8 +48,6 @@ import logging
 logger = logging.getLogger('core.pocketmill')
 
 import time
-
-#TODO: remove everywhere: self.stmove.shape.OffsetXY
 
 class InterPoint(object):
     def __init__(self, x=0, y=0, i=0, mill = False):
@@ -72,6 +66,8 @@ class InterPoint(object):
         
 class BBArray(object):
     def __init__(self, bbStartPoint, bbEndPoint, diff):
+        #This class creates array filled with points (self.create())
+        # they will be used to decide where to mill lines
         self.array = []
         self.any = False
         
@@ -91,6 +87,8 @@ class BBArray(object):
             self.yStart = bbEndPoint.y
             self.yEnd   = bbStartPoint.y
             
+        #TODO: calculate diff size based on BBArray height 
+        #TODO:  and minimal maximum diff (like on circle milling)
         self.diff = diff
         self.overUpRight = Point(self.xStart + 1, self.xStart + 1)
         self.overDownLeft = Point(self.xEnd - 1, self.xEnd - 1)
@@ -100,6 +98,7 @@ class BBArray(object):
         self.divX = 4
             
     def create(self):
+        #Fills array with InterPoints
         arrayIndex = 0 
         yi = self.yStart - self.diff / self.divY
             
@@ -112,6 +111,7 @@ class BBArray(object):
             yi -= self.diff / self.divY
             
     def checkIfAny(self):
+        #Checks if any of points is set to be milled
         any = False
         
         for point in self.array:
@@ -122,10 +122,13 @@ class BBArray(object):
         return any
         
     def append(self, newPoint):
+        #Adds point to array
         self.array.append(newPoint)
     
     def print(self):
         #This will stop work if array will be not in order
+        #This function tries to dump to stdout whole array
+        # in somehow readable way.
         yi = self.array[0].y
         print("%8.2f" % (yi) , end = "\t")
         
@@ -144,6 +147,8 @@ class BBArray(object):
         print()
         
     def removeLine(self, line):
+        #Sets points in array to mill=False
+        # if they lay on line
         if line.Ps.x > line.Pe.x:
             line = LineGeo(line.Pe, line.Ps)
         
@@ -152,6 +157,7 @@ class BBArray(object):
                 BBPoint.setMill(False)
                 
     def findHorizontalWithPoint(self, point):
+        #Search array to find maximum lenght line that contains given point
         #values outside the box
         closestFalseLeft = self.xStart - 1
         closestFalseRight = self.xEnd + 1
@@ -188,6 +194,9 @@ class BBArray(object):
             return LineGeo(Point(closestTrueRight, point.y), Point(closestTrueLeft, point.y))
     
     def findNextLine(self, line, preferTop):
+        #Tries to find line over or under given line to be milled.
+        # It prefers top or bottom, and returns new preferences ;)
+        # It returns preferTop = True if it finds Bottom.
         bottomY = self.yEnd - 1
         topY    = self.yStart + 1
         currentY = line.Ps.y
@@ -243,6 +252,10 @@ class BBArray(object):
                 
         
     def findClosestEnd(self, point):
+        #Looks for most-bottom and most-top y's.
+        # For those two looks for most-lefts and most-rights.
+        # Then checks which one is closest, so milling will start 
+        # from closest most-far line and most-close point.
         bottomY    = self.yStart + 1
         topY = self.yEnd - 1
         
@@ -290,6 +303,8 @@ class BBArray(object):
     
 class PocketMill(object):
     def __init__(self, stmove=None):
+        #It gets stmove object and do whole magic with it:
+        # creates paths for pocket milling
         self.stmove = stmove
         
         # Get tool radius based on tool diameter.
@@ -309,6 +324,8 @@ class PocketMill(object):
         self.inters = []
                 
     def removeNearShape(self):
+        #Looks for points in array that are too close to shape
+        # to be milled.
         for BBPoint in self.bbarray.array:
             #check only points that are meant to be milled
             if BBPoint.mill == True:
@@ -323,10 +340,15 @@ class PocketMill(object):
                             BBPoint.setMill(False)
                             break
     def movePoint(self, point):
+        #Moves point by particular value (addX and Y are
+        # calculated before creating "point")
         #in fact point is an array [point, addX, addY]
         return [Point(point[0].x + point[1], point[0].y + point[2]), point[1], point[2]]
                         
     def removeOutOfShape(self):
+        #Check all points in array if they are inside (self.inters) or
+        # outside shape. If they are outside, it sets them 
+        # to mill= False
         for BBPoint in self.bbarray.array:
             count = 0
             
@@ -436,7 +458,8 @@ class PocketMill(object):
             #print("End of finding intersections")
         
     def createLines(self):
-        
+        #This function will decide what kind of shape do we deal with
+        # then creates milling lines and move paths.
         circle = 0
         horizontalRectangle = 0
         
@@ -613,6 +636,8 @@ class PocketMill(object):
             pointRightBottom = Point(centerPoint.x + xOff - self.tool_rad * (1 + stepOverlayX),
                                 centerPoint.y - yOff + self.tool_rad * (1 + stepOverlayY))
             
+            #also calculade addX and addY values, so next time 
+            # corner-point will be in right place.
             stepX = (1 + stepOverlayX) * self.tool_rad
             stepY = (1 + stepOverlayY) * self.tool_rad 
             
@@ -664,7 +689,7 @@ class PocketMill(object):
                 addAfter = tmp1
                 
             #TODO: convert it to move based on horizontal and vertical lines only
-            # or check if it is needed.
+            #TODO:  or check if it is needed.
             self.stmove.append(LineGeo(realStart, pointList[0][0]))
             
             i = 0
@@ -711,9 +736,6 @@ class PocketMill(object):
             print("self.stmove.BB: %s" % self.stmove.shape.BB)
             
             self.bbarray = BBArray(self.stmove.shape.BB.Ps, self.stmove.shape.BB.Pe, self.diff)
-                            
-            #self.tool_rad
-            #self.stmove.shape.OffsetXY
             
             print("BBBounds: X%s to X%s, Y%s to Y%s" % (self.bbarray.xStart, self.bbarray.xEnd, self.bbarray.yStart, self.bbarray.yEnd))
             

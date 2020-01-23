@@ -62,6 +62,8 @@ class PocketMove(object):
 
         self.abs_geo = None
         
+        #This values will be set and used
+        # while generating GCode
         self.feedZ = 0
         self.feedXY = 0
         self.safe = 0
@@ -117,6 +119,7 @@ class PocketMove(object):
             else:
                 return self.Pe, (self.Pe - self.Ps).unit_vector()
             
+    #Sets values for GCode generation
     def setZMove(self, feedz, feedxy, safe, depth, retr):
         self.feedZ = feedz
         self.feedXY = feedxy
